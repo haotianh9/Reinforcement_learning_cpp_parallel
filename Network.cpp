@@ -43,12 +43,19 @@ Network::~Network()
 {
 }
 
-Netowrk::evaluate()
+Network::sample(inputdata)
 // Input a sample data X, output a reqiured output y
+// If the nn is an actor, maybe the situation when you need to sample an action based on a given observation
+// If the nn is a critic, maybe the situation when you need to evaluate the value function at a given observation
 {
 
 }
 
+Network::train(loss)
+//
+{
+
+}
 
 int main() {
     return 0;
