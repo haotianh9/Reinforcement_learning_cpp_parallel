@@ -7,7 +7,7 @@
 //
 
 
-#include "cart-pole.h"
+#include "cart_pole.h"
 #include "custom_action.h"
 #include <iostream>
 #include <cstdio>
