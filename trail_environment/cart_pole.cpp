@@ -6,16 +6,20 @@
 //  Copyright (c) 2015 Dmitry Alexeev. All rights reserved.
 //
 
+// compile: mpic++  -o cart cart_pole.cpp -fopenmp
+// running: mpirun ./cart
 
 #include "cart_pole.h"
+#include "cart_MPI.h"
 #include "custom_action.h"
 #include <iostream>
 #include <cstdio>
+#include "mpi.h"
 
-inline void app_main(smarties::Communicator*const comm, int argc, char**argv)
+// inline void app_main(int argc, char**argv)
+inline void app_main()
 {
-  const int control_vars = 1; // force along x
-  const int state_vars = 6; // x, vel, angvel, angle, cosine, sine
+  
 //   comm->setStateActionDims(state_vars, control_vars);
 
   //OPTIONAL: action bounds
@@ -31,37 +35,74 @@ inline void app_main(smarties::Communicator*const comm, int argc, char**argv)
   */
 
   //OPTIONAL: hide state variables. e.g. show cosine/sine but not angle
-  std::vector<bool> b_observable = {true, true, true, false, true, true};
+  // std::vector<bool> b_observable = {true, true, true, false, true, true};
   //std::vector<bool> b_observable = {true, false, false, false, true, true};
 //   comm->setStateObservable(b_observable);
   //comm->setIsPartiallyObservable();
 
   CartPole env;
 
-  while(true) //train loop
+  // while(true) //train loop
+  for (int i=0;i<9;i++)
   {
-    env.reset(comm->getPRNG()); // prng with different seed on each process
-    comm->sendInitState(env.getState()); //send initial state
+    env.reset(); // prng with different seed on each process
+    // comm->sendInitState(env.getState()); //send initial state
+    std::vector<double> state = env.getState();
+    for (int i=0;i<state_vars;i++) dbuf[i]=state[i];
+    MPI_Send(dbuf, state_vars, MPI_DOUBLE, 1, 10, MPI_COMM_WORLD);
+    
+    printf("send state = %f %f %f %f %f %f \n", state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
+    
+    // while (true) //simulation loop
+    // {
+    // //   std::vector<double> action = comm->recvAction();
+    // //   if(comm->terminateTraining()) return; // exit program
 
-    while (true) //simulation loop
-    {
-      std::vector<double> action = comm->recvAction();
-      if(comm->terminateTraining()) return; // exit program
+    // //   bool poleFallen = env.advance(action); //advance the simulation:
 
-      bool poleFallen = env.advance(action); //advance the simulation:
+    // //   std::vector<double> state = env.getState();
+    // //   double reward = env.getReward();
 
-      std::vector<double> state = env.getState();
-      double reward = env.getReward();
-
-      if(poleFallen) { //tell smarties that this is a terminal state
-        comm->sendTermState(state, reward);
-        break;
-      } else comm->sendState(state, reward);
-    }
-  }
+    // //   if(poleFallen) { //tell smarties that this is a terminal state
+    // //     comm->sendTermState(state, reward);
+    // //     break;
+    // //   } else comm->sendState(state, reward);
+    // }  //end of simulation loop
+  }// end of train loop
 }
 
 int main(int argc, char**argv)
 {
   
+  int myid;
+  int n;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
+  if (myid == 0) {
+    // n = 777;
+    // printf("sender n = %d\n", n);
+    // MPI_Send(&n, 1, MPI_INT, 1, 10, MPI_COMM_WORLD);
+    app_main();
+    
+  }
+  else {
+    // MPI_Recv(&n, 1, MPI_INT, 0, 10, MPI_COMM_WORLD, &status);
+    // printf("reciever n = %d\n", n);
+    // while(true)
+    for (int i=0;i<9;i++)
+    {
+      std::vector<double> state(6);
+
+      // MPI_Recv(dbuf, 6, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &status);
+      MPI_Irecv(dbuf, 6, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &request);
+      MPI_Wait( &request, &status);
+      for (int i=0;i<6;i++) state[i]=dbuf[i];
+      printf("recieve state = %f %f %f %f %f %f \n", state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
+
+      std::vector<double> action =getAction(state,control_vars);
+    }
+  }
+  MPI_Finalize();
+  return 0;
 }

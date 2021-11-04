@@ -12,6 +12,7 @@
 #include <random>
 #include <vector>
 #include <functional>
+#include <cassert>
 #define SWINGUP 0
 
 // Julien Berland, Christophe Bogey, Christophe Bailly,
@@ -73,8 +74,10 @@ struct CartPole
   Vec4 u;
   double F=0, t=0;
 
-	void reset(std::mt19937& gen)
+	void reset()
 	{
+    std::random_device rd;
+    std::mt19937 gen(rd());
 		#if SWINGUP
 	    std::uniform_real_distribution<double> dist(-.1,.1);
 		#else
