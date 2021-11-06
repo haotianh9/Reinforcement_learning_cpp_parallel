@@ -4,7 +4,7 @@ MPI_Status status;
 // MPI_Comm comm_action;
 // MPI_Comm comm_observation;
 // MPI_Comm comm_reward;
-MPI_Request request;
+//MPI_Request request;
 
 
 const int control_vars = 1; // force along x
