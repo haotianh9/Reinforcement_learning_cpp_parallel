@@ -1,5 +1,5 @@
 #include "mpi.h"
-
+#define NNnode 0
 MPI_Status status;
 // MPI_Comm comm_action;
 // MPI_Comm comm_observation;
@@ -12,5 +12,5 @@ const int state_vars = 6; // x, vel, angvel, angle, cosine, sine
 double dbuf[state_vars];
 double dbufa[control_vars];
 double dbufsrt[state_vars+2];
-const int Nepisodes=9;
-const int N_timestep=2;//Maximum time step in one episode
+const int Nepisodes=2;
+const int N_timestep=9;//Maximum time step in one episode

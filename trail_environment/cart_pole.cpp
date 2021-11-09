@@ -7,7 +7,7 @@
 //
 
 // compile: mpic++  -o cart cart_pole.cpp -fopenmp
-// running: mpirun ./cart
+// running: mpirun -n 2 ./cart
 
 #include "cart_pole.h"
 #include "cart_MPI.h"
@@ -17,7 +17,7 @@
 #include "mpi.h"
 
 // inline void app_main(int argc, char**argv)
-inline void app_main()
+inline void app_main(int myid)
 {
   
 //   comm->setStateActionDims(state_vars, control_vars);
@@ -46,12 +46,12 @@ inline void app_main()
   for (int i=0;i<Nepisodes;i++)
   {
     env.reset(); // prng with different seed on each process
-    // comm->sendInitState(env.getState()); //send initial state
+    //send initial state
     std::vector<double> state = env.getState();
     for (int i=0;i<state_vars;i++) dbuf[i]=state[i];
-    MPI_Send(dbuf, state_vars, MPI_DOUBLE, 1, 10, MPI_COMM_WORLD);
+    MPI_Send(dbuf, state_vars, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD);
     
-    printf("send state = %f %f %f %f %f %f \n", state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
+    printf("%d send state = %f %f %f %f %f %f \n",myid, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
     
 
     // while (true) //simulation loop
@@ -59,10 +59,10 @@ inline void app_main()
     {
       // MPI_Irecv(dbufa, control_vars, MPI_DOUBLE, 1, 10, MPI_COMM_WORLD, &request);
       // MPI_Wait( &request, &status);
-      MPI_Recv(dbufa, control_vars, MPI_DOUBLE, 1, 10, MPI_COMM_WORLD, &status); // recieve action
+      MPI_Recv(dbufa, control_vars, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD, &status); // recieve action
       std::vector<double> action(control_vars);
       for (int i=0;i<control_vars;i++) action[i]=dbufa[i];
-      printf("recieve action = %f  \n", action[0]);
+      printf("%d recieve action = %f  \n", myid, action[0]);
       // if(comm->terminateTraining()) return; // exit program
 
       bool poleFallen = env.advance(action); //advance the simulation:
@@ -74,11 +74,11 @@ inline void app_main()
       dbufsrt[state_vars]=reward;
       if(poleFallen){
         dbufsrt[state_vars+1]=1;
-        MPI_Send(dbufsrt, state_vars+2, MPI_DOUBLE, 1, 10, MPI_COMM_WORLD);  
+        MPI_Send(dbufsrt, state_vars+2, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD);  
         break;
       }else{
         dbufsrt[state_vars+1]=0;
-        MPI_Send(dbufsrt, state_vars+2, MPI_DOUBLE, 1, 10, MPI_COMM_WORLD);  
+        MPI_Send(dbufsrt, state_vars+2, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD);  
       }
     }  //end of simulation loop
   }// end of train loop
@@ -93,33 +93,23 @@ int main(int argc, char**argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
   if (myid == 0) {
-    // n = 777;
-    // printf("sender n = %d\n", n);
-    // MPI_Send(&n, 1, MPI_INT, 1, 10, MPI_COMM_WORLD);
-    app_main();
-    
-  }
-  else {
-    // MPI_Recv(&n, 1, MPI_INT, 0, 10, MPI_COMM_WORLD, &status);
-    // printf("reciever n = %d\n", n);
-    // while(true)
     for (int i=0;i<Nepisodes;i++)
     {
       std::vector<double> state(state_vars);
       // recieve intial state
-      MPI_Recv(dbuf, state_vars, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &status);
+
+      MPI_Recv(dbuf, state_vars, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &status);
       // MPI_Irecv(dbuf, state_vars, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &request);
       // MPI_Wait( &request, &status);
       for (int i=0;i<state_vars;i++) state[i]=dbuf[i];
-      printf("recieve state = %f %f %f %f %f %f \n", state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
+      printf("recieve state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
       for (int j=0; j <N_timestep; j++)
       { 
-
         std::vector<double> action =getAction(state,control_vars);
         for (int i=0;i<control_vars;i++) dbufa[i]=action[i];
-        MPI_Send(dbufa, control_vars, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD); // send action
-        printf("send action = %f  \n", action[0]);
-        MPI_Recv(dbufsrt, state_vars+2, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &status); // recieve state, reward, termination
+        MPI_Send(dbufa, control_vars, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD); // send action
+        printf("send action to %d = %f  \n", 1 , action[0]);
+        MPI_Recv(dbufsrt, state_vars+2, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &status); // recieve state, reward, termination
         // MPI_Irecv(dbufsrt, state_vars+2, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &request);
         // MPI_Wait( &request, &status);
         for (int i=0;i<state_vars;i++) state[i]=dbufsrt[i];
@@ -131,6 +121,9 @@ int main(int argc, char**argv)
         if (terminal) break;
       }  //end of simulation loop
     }// end of train loop
+  }
+  else {
+    app_main(myid);
   }
   MPI_Finalize();
   return 0;
