@@ -16,8 +16,7 @@
 #include <cstdio>
 #include "mpi.h"
 
-// inline void app_main(int argc, char**argv)
-inline void app_main(int myid)
+inline void env_run(int myid)
 {
   
 //   comm->setStateActionDims(state_vars, control_vars);
@@ -86,17 +85,8 @@ inline void app_main(int myid)
     }  //end of simulation loop
   }// end of train loop
 }
-
-int main(int argc, char**argv)
-{
-  
-  int myid;
-  int n;
-  MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-
-  if (myid == 0) {
-    for (int i=0;i<Nepisodes;i++)
+inline void NN_run(int nproc){
+  for (int i=0;i<Nepisodes;i++)
     {
       
       // recieve intial state
@@ -136,9 +126,20 @@ int main(int argc, char**argv)
         if (terminal) break;
       }  //end of simulation loop
     }// end of train loop
+}
+int main(int argc, char**argv)
+{
+  
+  int myid;
+  int n;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
+  if (myid == 0) {
+    NN_run(2);
   }
   else {
-    app_main(myid);
+    env_run(myid);
   }
   MPI_Finalize();
   return 0;
