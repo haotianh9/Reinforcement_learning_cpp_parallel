@@ -121,8 +121,11 @@ int main(int argc, char**argv)
         MPI_Recv(dbufsrt, state_vars+2, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &status); // recieve state, reward, termination
         // MPI_Irecv(dbufsrt, state_vars+2, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &request);
         // MPI_Wait( &request, &status);
-        for (int i=0;i<state_vars;i++) state[i]=dbufsrt[i];
-        // std::vector<double> state(dbufsrt,dbufsrt+state_vars); 
+
+        // for (int i=0;i<state_vars;i++) state[i]=dbufsrt[i];
+        
+        state.insert(state.begin(),std::begin(dbufsrt),std::begin(dbufsrt)+state_vars);
+        // std::vector<double> state(dbufsrt,dbufsrt+state_vars);  //creating a new vector here will cause problem
 
         // printf("recieve state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
         float reward=dbufsrt[state_vars];
