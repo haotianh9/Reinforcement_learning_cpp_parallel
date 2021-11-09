@@ -48,7 +48,8 @@ inline void app_main(int myid)
     env.reset(); // prng with different seed on each process
     //send initial state
     std::vector<double> state = env.getState();
-    for (int i=0;i<state_vars;i++) dbuf[i]=state[i];
+    // for (int i=0;i<state_vars;i++) dbuf[i]=state[i];
+    std::copy(state.begin(), state.end(), dbuf);
     MPI_Send(dbuf, state_vars, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD);
     
     printf("%d send state = %f %f %f %f %f %f \n",myid, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
@@ -60,8 +61,9 @@ inline void app_main(int myid)
       // MPI_Irecv(dbufa, control_vars, MPI_DOUBLE, 1, 10, MPI_COMM_WORLD, &request);
       // MPI_Wait( &request, &status);
       MPI_Recv(dbufa, control_vars, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD, &status); // recieve action
-      std::vector<double> action(control_vars);
-      for (int i=0;i<control_vars;i++) action[i]=dbufa[i];
+      // std::vector<double> action(control_vars);
+      // for (int i=0;i<control_vars;i++) action[i]=dbufa[i];
+      std::vector<double> action(dbufa,dbufa+control_vars);
       printf("%d recieve action = %f  \n", myid, action[0]);
       // if(comm->terminateTraining()) return; // exit program
 
@@ -70,7 +72,8 @@ inline void app_main(int myid)
       std::vector<double> state = env.getState(); 
       double reward = env.getReward();
       // send new observation, reward, and whether terminate or not, if terminate send 1, if not send 0
-      for (int i=0;i<state_vars;i++) dbufsrt[i]=state[i];
+      // for (int i=0;i<state_vars;i++) dbufsrt[i]=state[i];
+      std::copy(state.begin(), state.end(), dbufsrt);
       dbufsrt[state_vars]=reward;
       if(poleFallen){
         dbufsrt[state_vars+1]=1;
@@ -95,24 +98,33 @@ int main(int argc, char**argv)
   if (myid == 0) {
     for (int i=0;i<Nepisodes;i++)
     {
-      std::vector<double> state(state_vars);
+      
       // recieve intial state
 
       MPI_Recv(dbuf, state_vars, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &status);
       // MPI_Irecv(dbuf, state_vars, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &request);
       // MPI_Wait( &request, &status);
-      for (int i=0;i<state_vars;i++) state[i]=dbuf[i];
+      // std::vector<double> state(state_vars);
+      // for (int i=0;i<state_vars;i++) state[i]=dbuf[i];
+      std::vector<double> state(dbuf,dbuf+state_vars);
+
       printf("recieve state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
       for (int j=0; j <N_timestep; j++)
       { 
+        // printf("recieve state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
         std::vector<double> action =getAction(state,control_vars);
-        for (int i=0;i<control_vars;i++) dbufa[i]=action[i];
+   
+        // for (int i=0;i<control_vars;i++) dbufa[i]=action[i];
+        std::copy(action.begin(), action.end(), dbufa);
         MPI_Send(dbufa, control_vars, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD); // send action
         printf("send action to %d = %f  \n", 1 , action[0]);
         MPI_Recv(dbufsrt, state_vars+2, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &status); // recieve state, reward, termination
         // MPI_Irecv(dbufsrt, state_vars+2, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &request);
         // MPI_Wait( &request, &status);
         for (int i=0;i<state_vars;i++) state[i]=dbufsrt[i];
+        // std::vector<double> state(dbufsrt,dbufsrt+state_vars); 
+
+        // printf("recieve state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
         float reward=dbufsrt[state_vars];
         bool terminal = true;
         if (abs(dbufsrt[state_vars+1]) < 1E-3){
