@@ -121,7 +121,7 @@ struct CartPole
     return 0;
   }
 
-	std::vector<double> getState(const int size = 6)
+	std::vector<double> getobs(const int size = 6)
 	{
     assert(size == 4 || size == 6);
     std::vector<double> state(size);
