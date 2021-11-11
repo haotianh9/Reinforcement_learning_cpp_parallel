@@ -48,6 +48,10 @@ inline void env_run(int myid)
       MPI_Recv(dbufa, control_vars, MPI_DOUBLE, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // recieve action
       std::vector<double> action(dbufa,dbufa+control_vars);
       printf("%d recieve action = %f  \n", myid, action[0]);
+      if (action[0] == invalidaction){
+        printf("environment node %d done \n", myid);
+        return;
+      }
       bool terminate = env.advance(action); //advance the simulation:
       std::vector<double> obs = env.getobs(); 
       double reward = env.getReward();
@@ -69,7 +73,7 @@ inline void env_run(int myid)
     }  //end of simulation loop
   }// end of train loop
   printf("environment node %d done \n", myid);
-
+  return;
 }
 inline void NN_run(){
   int n_ep=0;
@@ -77,6 +81,7 @@ inline void NN_run(){
   bool done;
   bool terminate;
   bool start;
+  bool end=false;
   Memory mem[nprocs-1]; // an array of memorys, each memory object for each environment process
   while(true){
     for (int i=1;i<=nprocs-1;i++){
@@ -88,6 +93,9 @@ inline void NN_run(){
 
       mem[i-1].push_obs_act(obs,action,logprobs);
       std::copy(action.begin(), action.end(), dbufa);
+      if (end){
+        dbufa[0]=invalidaction;
+      }
       MPI_Send(dbufa, control_vars, MPI_DOUBLE, i, i+nprocs*2, MPI_COMM_WORLD); // send action
       printf("send action to %d = %f  \n", i , action[0]);
       float reward=dbufsrt[obs_vars];
@@ -109,9 +117,12 @@ inline void NN_run(){
       }
     }
     printf("total: Nepisodes: %d ; Ntimestep: %d \n" ,n_ep, n_timestep);
-    if ((n_ep >= Nepisodes) or (n_timestep >= Max_timestep)){
+    if (end or (n_ep >= Nepisodes)){
       printf("NN node exit");
       break;
+    }
+    if (n_timestep >= Max_timestep){
+      end=true;
     }
   }
 
