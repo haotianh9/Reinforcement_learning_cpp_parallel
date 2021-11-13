@@ -16,7 +16,7 @@
 #include <iostream>
 #include <cstdio>
 #include "mpi.h"
-
+#include <unistd.h>
 inline void env_run(int myid)
 {
   
@@ -75,50 +75,75 @@ inline void env_run(int myid)
   printf("environment node %d done \n", myid);
   return;
 }
+
+inline void respond_action(int envid, Memory& mem, bool end, int& n_ep, double dbufsrt[]){
+  std::vector<double> obs(dbufsrt,dbufsrt+obs_vars);
+  auto [action,logprobs] =getAction(obs,control_vars); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
+  mem.push_obs_act(obs,action,logprobs);
+  std::copy(action.begin(), action.end(), dbufa);
+  if (end){
+    dbufa[0]=invalidaction;
+  }
+  MPI_Send(dbufa, control_vars, MPI_DOUBLE, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
+  printf("send action to %d = %f  \n", envid , action[0]);
+  float reward=dbufsrt[obs_vars];
+  bool terminate = false;
+  bool done =false;
+  bool start =false;
+  if (abs(dbufsrt[obs_vars+1]-1) < 1E-3){
+    terminate=true;
+    n_ep++;
+  }if (abs(dbufsrt[obs_vars+1]-2) < 1E-3){
+    done=true;
+    n_ep++;
+  }if (abs(dbufsrt[obs_vars+1]-3) < 1E-3){
+    start=true;
+  }
+  if (!start){
+    mem.push_reward(reward,terminate,done);
+  }
+
+}
+
 inline void NN_run(){
   int n_ep=0;
   int n_timestep=0;
-  bool done;
-  bool terminate;
-  bool start;
   bool end=false;
   Memory mem[nprocs-1]; // an array of memorys, each memory object for each environment process
+  // MPI_Request reqs[nprocs-1];
   while(true){
+
     for (int i=1;i<=nprocs-1;i++){
       MPI_Recv(dbufsrt, obs_vars+2, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &status);
-      std::vector<double> obs(dbufsrt,dbufsrt+obs_vars);
-      // printf("recieve obs from %d= %f %f %f %f %f %f \n",i, obs[0] ,obs[1], obs[2] , obs[3] ,obs[4], obs[5]);
-      printf("recieve from %d= %f %f %f %f %f %f %f %f \n",i, dbufsrt[0] ,dbufsrt[1], dbufsrt[2] , dbufsrt[3] ,dbufsrt[4], dbufsrt[5],dbufsrt[6],dbufsrt[7]);
-      auto [action,logprobs] =getAction(obs,control_vars); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
-
-      mem[i-1].push_obs_act(obs,action,logprobs);
-      std::copy(action.begin(), action.end(), dbufa);
-      if (end){
-        dbufa[0]=invalidaction;
-      }
-      MPI_Send(dbufa, control_vars, MPI_DOUBLE, i, i+nprocs*2, MPI_COMM_WORLD); // send action
-      printf("send action to %d = %f  \n", i , action[0]);
-      float reward=dbufsrt[obs_vars];
-      terminate = false;
-      done =false;
-      start =false;
-      if (abs(dbufsrt[obs_vars+1]-1) < 1E-3){
-        terminate=true;
-        n_ep++;
-      }if (abs(dbufsrt[obs_vars+1]-2) < 1E-3){
-        done=true;
-        n_ep++;
-      }if (abs(dbufsrt[obs_vars+1]-3) < 1E-3){
-        start=true;
-      }
+      respond_action(i,mem[i-1],end,n_ep,dbufsrt);
       n_timestep++;
-      if (!start){
-        mem[i-1].push_reward(reward,terminate,done);
-      }
     }
     printf("total: Nepisodes: %d ; Ntimestep: %d \n" ,n_ep, n_timestep);
+
+    // for (int i=1;i<=nprocs-1;i++){
+    //   MPI_Irecv(dbufsrt, obs_vars+2, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &reqs[i-1]);  
+    // }
+    // int completed[nprocs-1];
+    // int comp_num=0;
+    // while(true){
+    //   for (int i=1;i<=nprocs-1;i++){
+    //     if (~completed[i-1]){
+    //       MPI_Test(&reqs[i-1],&completed[i-1],MPI_STATUS_IGNORE);
+    //       if(completed[i-1]){
+    //         respond_action(i,mem[i-1],end,n_ep,dbufsrt);
+    //         n_timestep++;
+    //         comp_num++;
+    //       }
+    //     }
+    //     // usleep(1);
+    //   }
+    //   if (comp_num == nprocs-1) break;
+    // }
+    // printf("total: Nepisodes: %d ; Ntimestep: %d \n" ,n_ep, n_timestep);
+
     if (end or (n_ep >= Nepisodes)){
       printf("NN node exit");
+      printf("check: memory length of 1's environment is %d", mem[0].action_list.size());
       break;
     }
     if (n_timestep >= Max_timestep){
