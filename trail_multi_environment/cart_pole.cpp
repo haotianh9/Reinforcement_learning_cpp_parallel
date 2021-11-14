@@ -143,7 +143,7 @@ inline void NN_run(){
 
     if (end or (n_ep >= Nepisodes)){
       printf("NN node exit");
-      printf("check: memory length of 1's environment is %d", mem[0].action_list.size());
+      printf("check: memory length of 1's environment is %ld", mem[0].action_list.size());
       break;
     }
     if (n_timestep >= Max_timestep){

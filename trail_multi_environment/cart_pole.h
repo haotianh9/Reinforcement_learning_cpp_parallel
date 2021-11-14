@@ -42,8 +42,9 @@ Vec rk46_nl(double t0, double dt, Vec u0, Func&& Diff)
   return u;
 }
 
-struct Vec4
+class Vec4
 {
+public:
   double y1, y2, y3, y4;
 
   Vec4(double _y1=0, double _y2=0, double _y3=0, double _y4=0) :
@@ -60,8 +61,9 @@ struct Vec4
   }
 };
 
-struct CartPole
+class CartPole
 {
+public:
   const double mp = 0.1;
   const double mc = 1;
   const double l = 0.5;
