@@ -53,7 +53,7 @@ inline void env_run(int myid)
         return;
       }
       bool terminate = env.advance(action); //advance the simulation:
-      std::vector<double> obs = env.getobs(); 
+      obs = env.getobs();
       double reward = env.getReward();
       // send new observation, reward, and whether terminate or not, if terminate send 1, if not send 0
       // for (int i=0;i<obs_vars;i++) dbufsrt[i]=obs[i];
@@ -90,13 +90,13 @@ inline void respond_action(int envid, Memory& mem, bool end, int& n_ep, double d
   bool terminate = false;
   bool done =false;
   bool start =false;
-  if (abs(dbufsrt[obs_vars+1]-1) < 1E-3){
+  if (std::abs(dbufsrt[obs_vars+1]-1) < 1E-3){
     terminate=true;
     n_ep++;
-  }if (abs(dbufsrt[obs_vars+1]-2) < 1E-3){
+  }if (std::abs(dbufsrt[obs_vars+1]-2) < 1E-3){
     done=true;
     n_ep++;
-  }if (abs(dbufsrt[obs_vars+1]-3) < 1E-3){
+  }if (std::abs(dbufsrt[obs_vars+1]-3) < 1E-3){
     start=true;
   }
   if (!start){
@@ -143,7 +143,7 @@ inline void NN_run(){
 
     if (end or (n_ep >= Nepisodes)){
       printf("NN node exit");
-      printf("check: memory length of 1's environment is %d", mem[0].action_list.size());
+      printf("check: memory length of 1's environment is %ld", mem[0].action_list.size());
       break;
     }
     if (n_timestep >= Max_timestep){
