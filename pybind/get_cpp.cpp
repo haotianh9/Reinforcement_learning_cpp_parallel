@@ -1,27 +1,29 @@
-//
-// Created by Qiongao Liu on 2021/11/14.
-//
-
-// cmake .
-// make
-
 #include <pybind11/pybind11.h>
-namespace py = pybind11;
 
-int add(int i, int j)
-{
+int add(int i, int j) {
     return i + j;
 }
 
-PYBIND11_MODULE(get_cpp, m)
-{
-    // optional module docstring
-    m.doc() = "pybind11 example plugin";
-    // expose add function, and add keyword arguments and default arguments
-    m.def("add", &add, "A function which adds two numbers", py::arg("i")=1, py::arg("j")=2);
+namespace py = pybind11;
 
-    // exporting variables
-    m.attr("the_answer") = 42;
-    py::object world = py::cast("World");
-    m.attr("what") = world;
+PYBIND11_MODULE(cmake_example, m) {
+    m.doc() = R"pbdoc(
+        Pybind11 example plugin
+        -----------------------
+        .. currentmodule:: cmake_example
+        .. autosummary::
+           :toctree: _generate
+           add
+           subtract
+    )pbdoc";
+
+    m.def("add", &add, R"pbdoc(
+        Add two numbers
+        Some other explanation about the add function.
+    )pbdoc");
+
+    m.def("subtract", [](int i, int j) { return i - j; }, R"pbdoc(
+        Subtract two numbers
+        Some other explanation about the subtract function.
+    )pbdoc");
 }
