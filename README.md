@@ -1,5 +1,6 @@
 # Reinforcement_learning_cpp_parallel
-Name is to be determined
+Name is to be determined.
+
 A parallel reinforcement learning framework written in C++
 
 Goal: build a small scalable, reliable and well-maintained RL framework in C++ that can be used for engineering research.
