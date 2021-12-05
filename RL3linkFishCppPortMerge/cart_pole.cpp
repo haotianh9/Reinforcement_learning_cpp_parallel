@@ -79,7 +79,7 @@ inline void env_run(int myid)
 
 inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, double dbufsrt[]){
   std::vector<double> obs(dbufsrt,dbufsrt+obs_vars);
-  auto [action,logprobs] =getAction(obs,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
+  auto [action,logprobs] = getAction(obs,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
   mem.push_obs_act(obs,action,logprobs);
   std::copy(action.begin(), action.end(), dbufa);
   if (end){
@@ -124,12 +124,23 @@ inline void NN_run(){
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
   //TODO: merge with Memory?
   MemoryNN memNN[nprocs-1];
+  auto updateTimestep = 4050;
   while(true){
 
     for (int i=1;i<=nprocs-1;i++){
       MPI_Recv(dbufsrt, obs_vars+2, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &status);
       respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
       n_timestep++;
+      if(n_timestep%updateTimestep==0){
+        MemoryNN mergedMemory;
+        for(int proc = 0; proc < nprocs; proc++){
+          mergedMemory.merge(memNN[proc]);
+          memNN[proc].clear();
+        }
+        ppo.update(mergedMemory);
+        n_timestep = 0;
+      }  
+      
     }
     printf("total: Nepisodes: %d ; Ntimestep: %d \n" ,n_ep, n_timestep);
 

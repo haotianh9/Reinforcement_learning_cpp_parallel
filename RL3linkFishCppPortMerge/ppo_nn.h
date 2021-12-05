@@ -20,10 +20,36 @@ class MemoryNN {
     auto push_reward(double reward, bool terminate, bool done){
         rewards.push_back(reward);
         is_terminals.push_back(terminate);
+    }
+    void merge(MemoryNN& r);
+    void clear();
+
+
+
+
 
     //TODO: handle done
-    }
+
 };
+
+void MemoryNN::merge(MemoryNN& r){
+    this->actions.insert(this->actions.end(), r.actions.begin(), r.actions.end());
+    this->states.insert(this->states.end(), r.states.begin(), r.states.end());
+    this->logprobs.insert(this->logprobs.end(), r.logprobs.begin(), r.logprobs.end());
+    this->rewards.insert(this->rewards.end(), r.rewards.begin(), r.rewards.end());
+    this->is_terminals.insert(this->is_terminals.end(), r.is_terminals.begin(), r.is_terminals.end());
+    
+
+}
+
+void MemoryNN::clear(){
+    this->actions.clear();
+    this->states.clear();
+    this->logprobs.clear();
+    this->rewards.clear();
+    this->is_terminals.clear();
+    
+}
 
 template<typename Scalar>
 torch::Tensor eigenToTensor(Eigen::Matrix<Scalar, Eigen::Dynamic, -1> mat){
@@ -148,7 +174,7 @@ struct ActorCritic: torch::nn::Module {
         //why register?
     }
 
-    auto act(torch::Tensor state, MemoryNN MemoryNN){
+    auto act(torch::Tensor state, MemoryNN& MemoryNN){
         // torch::Tensor test = linear(state);
         torch::Tensor action_mean = actor->forward(state);
         torch::Tensor cov_mat = torch::diag(action_var);
@@ -238,7 +264,7 @@ class PPO {
         this->MseLoss = torch::nn::MSELoss();
     }
 
-    auto select_action(torch::Tensor state, MemoryNN MemoryNN){
+    auto select_action(torch::Tensor state, MemoryNN& MemoryNN){
         //TODO: check
         state = state.reshape({1, -1});
         auto [action, logProb] = policy_old.act(state, MemoryNN);
