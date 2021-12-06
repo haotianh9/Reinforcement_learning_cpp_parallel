@@ -18,6 +18,6 @@ go to RL3linkFishCppPortMerge folder
 
 mkdir build
 cd build
-cmake -DCMAKE_PREFIX_PATH=/absolute/path/to/libtorch ..
+cmake -DCMAKE_PREFIX_PATH="/absolute/path/to/libtorch;PATH_TO_EIGEN" ..
 cmake --build . --config Release
 
