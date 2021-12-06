@@ -21,3 +21,7 @@ cd build
 cmake -DCMAKE_PREFIX_PATH="/absolute/path/to/libtorch;PATH_TO_EIGEN" ..
 cmake --build . --config Release
 
+4. running:
+mpirun -n 4 ./example-app  > out   
+in which 4 is the amount of nodes you want to use 
+(> out) means everything which are supposed to be printed in terminal is instead printed in a file called out
