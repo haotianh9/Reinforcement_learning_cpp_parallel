@@ -56,6 +56,7 @@ inline void env_run(int myid)
       bool terminate = env.advance(action); //advance the simulation:
       obs = env.getobs();
       double reward = env.getReward();
+      cout << terminate << endl;
       // send new observation, reward, and whether terminate or not, if terminate send 1, if not send 0
       // for (int i=0;i<obs_vars;i++) dbufsrt[i]=obs[i];
       std::copy(obs.begin(), obs.end(), dbufsrt);
@@ -79,6 +80,9 @@ inline void env_run(int myid)
 
 inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, double dbufsrt[]){
   std::vector<double> obs(dbufsrt,dbufsrt+obs_vars);
+  cout << "Observation: ";
+  for(int i = 0; i < obs_vars; i++) cout << dbufsrt[i] << " ";
+  cout << endl;
   auto [action,logprobs] = getAction(obs,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
   mem.push_obs_act(obs,action,logprobs);
   std::copy(action.begin(), action.end(), dbufa);
@@ -91,6 +95,8 @@ inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, boo
   bool terminate = false;
   bool done =false;
   bool start =false;
+  
+  cout << "Reward is: " << reward << endl;
   if (std::abs(dbufsrt[obs_vars+1]-1) < 1E-3){
     terminate=true;
     n_ep++;
@@ -100,6 +106,7 @@ inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, boo
   }if (std::abs(dbufsrt[obs_vars+1]-3) < 1E-3){
     start=true;
   }
+  cout << "Obs vars are:  " << dbufsrt[obs_vars+1]-3 << " " << "Start is: " << start << " " << done << " " << " " << terminate <<  endl;
   if (!start){
     mem.push_reward(reward,terminate,done);
     memNN.push_reward(reward, terminate, done);
@@ -124,16 +131,19 @@ inline void NN_run(){
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
   //TODO: merge with Memory?
   MemoryNN memNN[nprocs-1];
-  auto updateTimestep = 4050;
+  auto updateTimestep = 10;
   while(true){
 
     for (int i=1;i<=nprocs-1;i++){
       MPI_Recv(dbufsrt, obs_vars+2, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &status);
       respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
       n_timestep++;
+      cout << "Timestep " << n_timestep << endl;
       if(n_timestep%updateTimestep==0){
+        cout << "Updating " << n_timestep << endl;
         MemoryNN mergedMemory;
-        for(int proc = 0; proc < nprocs; proc++){
+        for(int proc = 0; proc < nprocs-1; proc++){
+          cout << "States" << memNN[proc].states.size() << endl;
           mergedMemory.merge(memNN[proc]);
           memNN[proc].clear();
         }

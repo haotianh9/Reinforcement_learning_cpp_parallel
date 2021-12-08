@@ -15,7 +15,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 message("${CMAKE_MODULE_PATH}")
 message("${EIGEN3_INCLUDE_DIR}")
-target_link_libraries(example-app PRIVATE  MPI::MPI_C Eigen3::Eigen "${TORCH_LIBRARIES}" 
+target_link_libraries(example-app PRIVATE  MPI::MPI_CXX Eigen3::Eigen "${TORCH_LIBRARIES}" 
  )
 set_property(TARGET example-app PROPERTY CXX_STANDARD 17)
 
