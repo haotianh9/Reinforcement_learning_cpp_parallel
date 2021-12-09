@@ -22,11 +22,11 @@ std::tuple<std::vector<double>, double> getAction(std::vector<double> observatio
     for(int i = 0; i < actionTensor.sizes()[0]; i++){
             actionTensorDouble.push_back(actionTensor.index({i}).item().toDouble());
     }
-    cout << actionTensorDouble.size() << endl;
-    for(auto a: actionTensorDouble){
-        cout << a << " ";
-    }
-    cout << endl;
+    // cout << actionTensorDouble.size() << endl;
+    // for(auto a: actionTensorDouble){
+    //     cout << a << " ";
+    // }
+    // cout << endl;
     auto logProb = logProbTensor.item().toDouble();
     return {actionTensorDouble, logProb};
 }

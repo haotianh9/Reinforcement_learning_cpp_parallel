@@ -31,6 +31,7 @@ inline void env_run(int myid)
   // while(true) //train loop
   for (int i=0;i<(int)(Nepisodes/(nprocs-1));i++)
   {
+    double episode_reward=0.0;
     printf("myid: %d episoe: %d \n", myid,i);
     env.reset(); // prng with different seed on each process
     //send initial obs
@@ -56,14 +57,16 @@ inline void env_run(int myid)
       bool terminate = env.advance(action); //advance the simulation:
       obs = env.getobs();
       double reward = env.getReward();
-      cout << terminate << endl;
+      episode_reward+=reward;
+      // cout << terminate << endl;
       // send new observation, reward, and whether terminate or not, if terminate send 1, if not send 0
       // for (int i=0;i<obs_vars;i++) dbufsrt[i]=obs[i];
       std::copy(obs.begin(), obs.end(), dbufsrt);
       dbufsrt[obs_vars+1]=reward;
       if(terminate){
         dbufsrt[obs_vars+1]=1;
-        MPI_Send(dbufsrt, obs_vars+2, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD);  
+        MPI_Send(dbufsrt, obs_vars+2, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD); 
+        printf("myid: %d episoe: %d terminate !!! \n", myid,i); 
         break;
       }else if (j == (N_timestep-1)){
         dbufsrt[obs_vars+1]=2;
@@ -73,6 +76,7 @@ inline void env_run(int myid)
         MPI_Send(dbufsrt, obs_vars+2, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD);  
       }
     }  //end of simulation loop
+    printf("myid: %d episoe: %d reward: %f\n", myid,i,episode_reward);
   }// end of train loop
   printf("environment node %d done \n", myid);
   return;
@@ -80,9 +84,9 @@ inline void env_run(int myid)
 
 inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, double dbufsrt[]){
   std::vector<double> obs(dbufsrt,dbufsrt+obs_vars);
-  cout << "Observation: ";
-  for(int i = 0; i < obs_vars; i++) cout << dbufsrt[i] << " ";
-  cout << endl;
+  // cout << "Observation: ";
+  // for(int i = 0; i < obs_vars; i++) cout << dbufsrt[i] << " ";
+  // cout << endl;
   auto [action,logprobs] = getAction(obs,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
   mem.push_obs_act(obs,action,logprobs);
   std::copy(action.begin(), action.end(), dbufa);
@@ -96,7 +100,7 @@ inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, boo
   bool done =false;
   bool start =false;
   
-  cout << "Reward is: " << reward << endl;
+  // cout << "Reward is: " << reward << endl;
   if (std::abs(dbufsrt[obs_vars+1]-1) < 1E-3){
     terminate=true;
     n_ep++;
@@ -106,7 +110,7 @@ inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, boo
   }if (std::abs(dbufsrt[obs_vars+1]-3) < 1E-3){
     start=true;
   }
-  cout << "Obs vars are:  " << dbufsrt[obs_vars+1]-3 << " " << "Start is: " << start << " " << done << " " << " " << terminate <<  endl;
+  // cout << "Obs vars are:  " << dbufsrt[obs_vars+1]-3 << " " << "Start is: " << start << " " << done << " " << " " << terminate <<  endl;
   if (!start){
     mem.push_reward(reward,terminate,done);
     memNN.push_reward(reward, terminate, done);
@@ -131,7 +135,7 @@ inline void NN_run(){
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
   //TODO: merge with Memory?
   MemoryNN memNN[nprocs-1];
-  auto updateTimestep = 10;
+  auto updateTimestep = 1900;
   while(true){
 
     for (int i=1;i<=nprocs-1;i++){

@@ -37,7 +37,7 @@ torch::Tensor eigenToTensor(Eigen::Matrix<Scalar, Eigen::Dynamic, -1> mat){
 auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch::Tensor& action){
     // cout << covar << endl;
     // cout << covar.inverse() << endl;
-    cout << "Action is: " << action << endl;
+    // cout << "Action is: " << action << endl;
     auto diff = action - action_mean;
     // cout << "Diff sizes " << diff.sizes() << endl;
     // cout << diff.transpose(0, 1) << endl;
@@ -232,7 +232,7 @@ class PPO {
             if(is_terminal){
                 auto value = policy.critic->forward(MemoryNNState.squeeze());
                 discounted_reward = value;
-                
+                // torch::Tensor discounted_reward = torch::tensor({0.0});
             }
             discounted_reward = reward + (gamma * discounted_reward);
             rewards.insert(rewards.begin(), discounted_reward);
