@@ -49,6 +49,8 @@ inline void env_run(int myid)
     for (int j=0; j <N_timestep; j++)
     {
       MPI_Recv(dbufa, control_vars, MPI_DOUBLE, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // recieve action
+      
+      dbufa[0]*=10;
       std::vector<double> action(dbufa,dbufa+control_vars);
       printf("%d recieve action = %f  \n", myid, action[0]);
       if (action[0] == invalidaction){
@@ -131,7 +133,7 @@ inline void NN_run(){
   Memory mem[nprocs-1]; // an array of memorys, each memory object for each environment process
   // MPI_Request reqs[nprocs-1];
   
-  auto action_std = 0.5;            // constant std for action distribution (Multivariate Normal)
+  auto action_std = 0.2;            // constant std for action distribution (Multivariate Normal)
   auto K_epochs = 80;            // update policy for K epochs
   auto eps_clip = 0.2;            // clip parameter for PPO
   auto gamma = 0.99;            // discount factor

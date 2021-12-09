@@ -1,18 +1,17 @@
-myid: 3episode:0reward:35.00000000
-myid: 3episode:1reward:39.00000000
-myid: 2episode:2reward:51.00000000
-myid: 3episode:3reward:41.00000000
-myid: 1episode:4reward:45.00000000
-myid: 1episode:5reward:36.00000000
-myid: 3episode:6reward:53.00000000
-myid: 2episode:7reward:52.00000000
-myid: 2episode:8reward:42.00000000
-myid: 2episode:9reward:32.00000000
-myid: 1episode:10reward:64.00000000
-myid: 1episode:11reward:27.00000000
-myid: 1episode:12reward:23.00000000
-myid: 1episode:13reward:41.00000000
-myid: 1episode:14reward:44.00000000
-myid: 1episode:15reward:32.00000000
-myid: 3episode:16reward:25.00000000
-myid: 3episode:17reward:42.00000000
+myid: 2	 episode:0	 reward:41.00000000
+myid: 3	 episode:1	 reward:59.00000000
+myid: 3	 episode:2	 reward:34.00000000
+myid: 3	 episode:3	 reward:30.00000000
+myid: 1	 episode:4	 reward:46.00000000
+myid: 1	 episode:5	 reward:28.00000000
+myid: 2	 episode:6	 reward:57.00000000
+myid: 2	 episode:7	 reward:32.00000000
+myid: 2	 episode:8	 reward:41.00000000
+myid: 2	 episode:9	 reward:27.00000000
+myid: 1	 episode:10	 reward:69.00000000
+myid: 1	 episode:11	 reward:30.00000000
+myid: 1	 episode:12	 reward:47.00000000
+myid: 1	 episode:13	 reward:28.00000000
+myid: 1	 episode:14	 reward:34.00000000
+myid: 1	 episode:15	 reward:26.00000000
+myid: 3	 episode:16	 reward:36.00000000
