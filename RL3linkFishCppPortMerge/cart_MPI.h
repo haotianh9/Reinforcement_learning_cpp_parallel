@@ -3,7 +3,7 @@
 #include <fstream>
 #define NNnode 0
 // #define invalidaction 999999999
-#define invalidaction std::numeric_limits<double>::max()
+#define INVALIDACTION std::numeric_limits<float>::max()
 MPI_Status status;
 MPI_Request request;
 
