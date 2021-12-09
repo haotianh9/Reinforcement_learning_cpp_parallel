@@ -81,7 +81,7 @@ inline void env_run(int myid)
     myfile <<"myid: " << myid;
     myfile << "episode:"<< i; 
     myfile <<  "reward:" ;
-    myfile << episode_reward << endl;
+    myfile << std::fixed << std::setprecision(8) << episode_reward << endl;
 
   }// end of train loop
   printf("environment node %d done \n", myid);
