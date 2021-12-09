@@ -53,6 +53,10 @@
         "bit": "cpp",
         "compare": "cpp",
         "concepts": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "chrono": "cpp",
+        "ratio": "cpp",
+        "set": "cpp",
+        "thread": "cpp"
     }
 }
