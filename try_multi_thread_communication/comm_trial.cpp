@@ -36,6 +36,7 @@ inline void center_node(){
     //     printf("     send to process %d \n",  j);
     //   }
     // }
+    omp_set_num_threads(nprocs-1);
     #pragma omp parallel private(dbuf,dbuf_r,std)
     {
       std=omp_get_thread_num();

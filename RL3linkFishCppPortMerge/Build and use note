@@ -1,0 +1,27 @@
+1. Download dependence:
+libtorch:
+https://pytorch.org/cppdocs/installing.html
+
+wget https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip
+unzip libtorch-shared-with-deps-latest.zip
+
+Eigen (must use 3.4, apt-get now only support 3.3.7):
+https://eigen.tuxfamily.org/index.php?title=Main_Page
+wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
+
+2. build eigen:
+go into the directory of Eigen and create a build folder 
+cmake -DCMAKE_INSTALL_PREFIX=DIRECTORY_INSTALL ../ (fill this with the directory where you want to put Eigen)
+
+3. build our project:
+go to RL3linkFishCppPortMerge folder
+
+mkdir build
+cd build
+cmake -DCMAKE_PREFIX_PATH="/absolute/path/to/libtorch;PATH_TO_EIGEN" ..
+cmake --build . --config Release
+
+4. running:
+mpirun -n 4 ./example-app  > out   
+in which 4 is the amount of nodes you want to use 
+(> out) means everything which are supposed to be printed in terminal is instead printed in a file called out
