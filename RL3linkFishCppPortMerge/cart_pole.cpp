@@ -36,24 +36,28 @@ inline void env_run(int myid)
     printf("myid: %d episoe: %d \n", myid,i);
     env.reset(); // prng with different seed on each process
     //send initial obs
-    std::vector<double> obs = env.getobs();
+    auto obs_raw = env.getobs();
+    // make sure the data type is float
+    cout << "ORIGINAL" << obs_raw << endl;
+    vector<float> obs(obs_raw.begin(), obs_raw.end())
+    cout << "ORIGINAL" << obs << endl;
     // for (int i=0;i<obs_vars;i++) dbuf[i]=obs[i];
-    std::copy(obs.begin(), obs.end(), dbufsrt);
-    dbufsrt[obs_vars]=0;
-    dbufsrt[obs_vars+1]=3;
-    MPI_Send(dbufsrt, obs_vars+2, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD);
+    // std::copy(obs.begin(), obs.end(), dbufsrt);
+    // dbufsrt[obs_vars]=0;
+    // dbufsrt[obs_vars+1]=3;
+    MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);
     printf("%d send obs = %f %f %f %f %f %f \n",myid, obs[0] ,obs[1], obs[2] , obs[3] ,obs[4], obs[5]);
     
 
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
     {
-      MPI_Recv(dbufa, control_vars, MPI_DOUBLE, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // recieve action
+      MPI_Recv(dbufa, control_vars, MPI_FLOAT, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // recieve action
       
       dbufa[0]*=10;
       std::vector<double> action(dbufa,dbufa+control_vars);
       printf("%d recieve action = %f  \n", myid, action[0]);
-      if (action[0] == invalidaction){
+      if (action[0] == INVALIDACTION){
         printf("environment node %d done \n", myid);
         return;
       }
@@ -68,15 +72,15 @@ inline void env_run(int myid)
       dbufsrt[obs_vars+1]=reward;
       if(terminate){
         dbufsrt[obs_vars+1]=1;
-        MPI_Send(dbufsrt, obs_vars+2, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD); 
+        MPI_Send(dbufsrt, obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
         printf("myid: %d episoe: %d terminate !!! \n", myid,i); 
         break;
       }else if (j == (N_timestep-1)){
         dbufsrt[obs_vars+1]=2;
-        MPI_Send(dbufsrt, obs_vars+2, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD);  
+        MPI_Send(dbufsrt, obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }else{
         dbufsrt[obs_vars+1]=0;
-        MPI_Send(dbufsrt, obs_vars+2, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD);  
+        MPI_Send(dbufsrt, obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }
     }  //end of simulation loop
     printf("myid: %d episoe: %d reward: %f\n", myid,i,episode_reward);
@@ -90,18 +94,20 @@ inline void env_run(int myid)
   return;
 }
 
-inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, double dbufsrt[]){
-  std::vector<double> obs(dbufsrt,dbufsrt+obs_vars);
+// inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, float dbufsrt[]){
+inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, float dbufsrt[]){
+  std::vector<float> obs(dbufsrt,dbufsrt+obs_vars);
   // cout << "Observation: ";
   // for(int i = 0; i < obs_vars; i++) cout << dbufsrt[i] << " ";
   // cout << endl;
   auto [action,logprobs] = getAction(obs,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
-  mem.push_obs_act(obs,action,logprobs);
-  std::copy(action.begin(), action.end(), dbufa);
+
+  // TODO generalize learner and memory (class learner as the base class for ppo etc.)
+  // ppo.update_memory()
   if (end){
-    dbufa[0]=invalidaction;
+    dbufa[0]=INVALIDACTION;
   }
-  MPI_Send(dbufa, control_vars, MPI_DOUBLE, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
+  MPI_Send(dbufa, control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
   printf("send action to %d = %f  \n", envid , action[0]);
   float reward=dbufsrt[obs_vars];
   bool terminate = false;
@@ -120,7 +126,7 @@ inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, boo
   }
   // cout << "Obs vars are:  " << dbufsrt[obs_vars+1]-3 << " " << "Start is: " << start << " " << done << " " << " " << terminate <<  endl;
   if (!start){
-    mem.push_reward(reward,terminate,done);
+
     memNN.push_reward(reward, terminate, done);
   }
 
@@ -130,7 +136,7 @@ inline void NN_run(){
   int n_ep=0;
   int n_timestep=0;
   bool end=false;
-  Memory mem[nprocs-1]; // an array of memorys, each memory object for each environment process
+  // Memory mem[nprocs-1]; // an array of memorys, each memory object for each environment process
   // MPI_Request reqs[nprocs-1];
   
   auto action_std = 0.2;            // constant std for action distribution (Multivariate Normal)
@@ -147,8 +153,9 @@ inline void NN_run(){
   while(true){
 
     for (int i=1;i<=nprocs-1;i++){
-      MPI_Recv(dbufsrt, obs_vars+2, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &status);
-      respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
+      MPI_Recv(dbufsrt, obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
+      // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
+      respond_action(i,memNN[i-1], ppo, end,n_ep,dbufsrt);
       n_timestep++;
       cout << "Timestep " << n_timestep << endl;
       if(n_timestep%updateTimestep==0){

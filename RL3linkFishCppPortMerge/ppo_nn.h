@@ -8,7 +8,7 @@
 
 #define PRINT_SIZES(a) cout << a[0] <<" " << a[1] << endl
 using namespace std;
-tuple<vector<double>, double> getAction(vector<float> observation,  int dim, PPO ppo, MemoryNN& memoryNN)
+tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO ppo, MemoryNN& memoryNN)
 {
     // std::vector<double> action(dim);
     //should we return both the action and the log prob here?
@@ -343,14 +343,10 @@ class PPO {
 
     auto select_action(torch::Tensor state, MemoryNN& MemoryNN){
         //TODO: check
-        cout << "CLEAR a" << endl;
         state = state.reshape({1, -1});
-        cout << "CLEAR b" << endl;
         auto [action, logProb] = policy_old.act(state, MemoryNN);
         // PRINT_SIZES(action.sizes()) << endl;
-        cout << "CLEAR c" << endl;
         action = action.cpu().flatten();
-        cout << "CLEAR d" << endl;
         // PRINT_SIZES(action.sizes()) << endl;
         return make_tuple(action, logProb);
 
