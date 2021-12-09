@@ -11,7 +11,7 @@ std::tuple<std::vector<double>, double> getAction(std::vector<double> observatio
         observationTensor[{i}] = observation[i];
     }
     //torch::from_blob(observation.data(), {observation.size()}, torch::TensorOptions().dtype(torch::kFloat32));
-    cout << "Observation " << observationTensor << endl;
+    // cout << "Observation " << observationTensor << endl;
     auto [actionTensor, logProbTensor] = ppo.select_action(observationTensor, memoryNN);
     // action[0]=observation[0]+observation[1];
     // float logprob;

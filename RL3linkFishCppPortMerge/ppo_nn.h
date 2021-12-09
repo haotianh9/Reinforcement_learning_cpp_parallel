@@ -83,9 +83,9 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
     // cout << diff.transpose(0, 1) << endl;
     auto covarInverse = covar.inverse();
     // cout << "Multivariate log prob" << endl;
-    printSizes(action_mean);
-    printSizes(covar);
-    printSizes(diff);    
+    // printSizes(action_mean);
+    // printSizes(covar);
+    // printSizes(diff);    
 
     auto numerator = -0.5 * (diff.transpose(0, 1).matmul(covarInverse.matmul( diff)));
     numerator = torch::exp(numerator);
