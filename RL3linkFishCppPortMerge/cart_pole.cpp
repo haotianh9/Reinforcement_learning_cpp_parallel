@@ -14,6 +14,7 @@
 #include "custom_action.h"
 #include "Memory.h"
 #include <iostream>
+#include <fstream>
 #include <cstdio>
 #include "mpi.h"
 #include <unistd.h>
@@ -77,6 +78,11 @@ inline void env_run(int myid)
       }
     }  //end of simulation loop
     printf("myid: %d episoe: %d reward: %f\n", myid,i,episode_reward);
+    myfile <<"myid: " << myid;
+    myfile << "episode:"<< i; 
+    myfile <<  "reward:" ;
+    myfile << episode_reward << endl;
+
   }// end of train loop
   printf("environment node %d done \n", myid);
   return;
@@ -195,6 +201,7 @@ int main(int argc, char**argv)
 
   int myid;
   int n;
+  myfile.open ("../log.txt");
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   
@@ -208,5 +215,6 @@ int main(int argc, char**argv)
     env_run(myid);
   }
   MPI_Finalize();
+  myfile.close();
   return 0;
 }

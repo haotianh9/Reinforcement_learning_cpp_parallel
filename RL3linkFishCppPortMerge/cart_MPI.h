@@ -1,4 +1,6 @@
 #include "mpi.h"
+#include <iostream>
+#include <fstream>
 #define NNnode 0
 // #define invalidaction 999999999
 #define invalidaction std::numeric_limits<double>::max()
@@ -15,3 +17,4 @@ double dbufsrt[obs_vars+2]; // the dbuf is sending these things: state, reward, 
 const int Nepisodes=90000;
 const int N_timestep=100;//Maximum time step in one episode
 const int Max_timestep=9000000;//Maximum training timestep (either define this or define Nepisodes)
+std::ofstream myfile;

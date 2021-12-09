@@ -1,3 +1,0 @@
-cmake -DCMAKE_PREFIX_PATH=/home/haotian/libtorch .. 
-cmake --build . --config Release
-(/home/haotian/libtorch should be replaced by the directory where libtorch is)
