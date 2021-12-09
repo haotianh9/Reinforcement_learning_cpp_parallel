@@ -145,7 +145,7 @@ inline void NN_run(){
         for(int proc = 0; proc < nprocs-1; proc++){
           cout << "States" << memNN[proc].states.size() << endl;
           mergedMemory.merge(memNN[proc]);
-          memNN[proc].clear();
+          // memNN[proc].clear();
         }
         ppo.update(mergedMemory);
         n_timestep = 0;

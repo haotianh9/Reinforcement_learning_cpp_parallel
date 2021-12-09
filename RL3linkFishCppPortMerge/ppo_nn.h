@@ -33,12 +33,19 @@ class MemoryNN {
 };
 
 void MemoryNN::merge(MemoryNN& r){
-    this->actions.insert(this->actions.end(), r.actions.begin(), r.actions.end());
-    this->states.insert(this->states.end(), r.states.begin(), r.states.end());
-    this->logprobs.insert(this->logprobs.end(), r.logprobs.begin(), r.logprobs.end());
-    this->rewards.insert(this->rewards.end(), r.rewards.begin(), r.rewards.end());
-    this->is_terminals.insert(this->is_terminals.end(), r.is_terminals.begin(), r.is_terminals.end());
-    cout << "Merge successful" << endl;
+    // cout << "Rewards: " << r.states.size() << " " << r.rewards.size() << " " << endl;
+    auto rewardsDiff = r.rewards.end() - r.rewards.begin();
+    this->actions.insert(this->actions.end(), r.actions.begin(), r.actions.begin()+rewardsDiff);
+    r.actions.erase(r.actions.begin(), r.actions.begin()+rewardsDiff);
+    this->states.insert(this->states.end(), r.states.begin(), r.states.begin() + rewardsDiff);
+    r.states.erase(r.states.begin(), r.states.begin() + rewardsDiff);
+    this->logprobs.insert(this->logprobs.end(), r.logprobs.begin(), r.logprobs.begin() + rewardsDiff);
+    r.logprobs.erase(r.logprobs.begin(), r.logprobs.begin() + rewardsDiff);
+    this->rewards.insert(this->rewards.end(), r.rewards.begin(), r.rewards.begin() + rewardsDiff);
+    r.rewards.erase(r.rewards.begin(), r.rewards.begin() + rewardsDiff);
+    this->is_terminals.insert(this->is_terminals.end(), r.is_terminals.begin(), r.is_terminals.begin() + rewardsDiff);
+    r.is_terminals.erase(r.is_terminals.begin(), r.is_terminals.begin() + rewardsDiff);
+    // cout << "Merge successful" << endl;
 
 }
 
@@ -75,7 +82,7 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
     // cout << "Diff sizes " << diff.sizes() << endl;
     // cout << diff.transpose(0, 1) << endl;
     auto covarInverse = covar.inverse();
-    cout << "Multivariate log prob" << endl;
+    // cout << "Multivariate log prob" << endl;
     printSizes(action_mean);
     printSizes(covar);
     printSizes(diff);    
@@ -175,14 +182,14 @@ struct ActorCritic: torch::nn::Module {
 
     auto act(torch::Tensor state, MemoryNN& MemoryNN){
         // torch::Tensor test = linear(state);
-        cout << "ACT ";
-        PRINT_SIZES(state.sizes());
+        // cout << "ACT ";
+        // PRINT_SIZES(state.sizes());
         torch::Tensor action_mean = actor->forward(state);
         
         torch::Tensor cov_mat = torch::diag(action_var);
-        cout << "Action " << action_mean << endl;
-        cout << "Cov Mat" << cov_mat << endl;
-        PRINT_SIZES(action_mean.sizes());
+        // cout << "Action " << action_mean << endl;
+        // cout << "Cov Mat" << cov_mat << endl;
+        // PRINT_SIZES(action_mean.sizes());
         // cov_mat = torch.diag(self.action_var).to(device)
         //TODO:NEED To convert to Pytorch
         // Eigen::Vector2d eigen_mean = tensorToVector2d(action_mean);
@@ -215,20 +222,21 @@ struct ActorCritic: torch::nn::Module {
     }
 
     tuple<torch::Tensor, torch::Tensor, torch::Tensor> evaluate(torch::Tensor state, torch::Tensor action){
-        cout << "EVALUATE ";
-        PRINT_SIZES(state.sizes());
+        // cout << "EVALUATE ";
+        // PRINT_SIZES(state.sizes());
         auto action_mean = actor->forward(state);
-        this->action_var = action_var.expand_as(action_mean);
-        auto cov_mat = torch::diag_embed(action_var);
+        // cout << action_mean.sizes()[0] << " " << action_var.sizes()[0] << endl;
+        auto action_var_expanded = action_var.expand_as(action_mean);
+        auto cov_mat = torch::diag_embed(action_var_expanded);
 
         // PRINT_SIZES(action_mean.sizes());
-        for(auto s: action_mean.sizes()){
-            cout << s << " ";
-        }
-        for(auto s: cov_mat.sizes()){
-            cout << s << " ";
-        }
-        cout << endl;
+        // for(auto s: action_mean.sizes()){
+        //     cout << s << " ";
+        // }
+        // for(auto s: cov_mat.sizes()){
+        //     cout << s << " ";
+        // }
+        // cout << endl;
         // PRINT_SIZES(cov_mat.sizes();
         auto action_logprobs = torch::randn({state.sizes()[0]});
         auto dist_entropy = torch::randn({state.sizes()[0]});
@@ -237,16 +245,16 @@ struct ActorCritic: torch::nn::Module {
             auto sampleActionMean = action_mean.index({sample}).reshape({action_mean.sizes()[1], action.sizes()[2]?action.sizes()[2]:1});;
             Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToVector(sampleActionMean);
             auto sampleCovar = cov_mat.index({sample});
-            for(auto s: sampleCovar.sizes()){
-                cout << s << " ";
-            }
-            cout << endl;
+            // for(auto s: sampleCovar.sizes()){
+            //     cout << s << " ";
+            // }
+            // cout << endl;
             
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(sampleCovar);
             Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar);
             // auto squeezedAction = torch::squeeze(action);
             // PRINT_SIZES(squeezedAction.sizes());
-            cout << "Action sizes" << " " << action.sizes()[1] << " " << action.sizes()[2] << endl;
+            // cout << "Action sizes" << " " << action.sizes()[1] << " " << action.sizes()[2] << endl;
             auto sampleAction = action.index({sample}).reshape({action.sizes()[1]?action.sizes()[1]:1, action.sizes()[2]?action.sizes()[2]:1});
             auto action_logprob = multivariateLogProb(sampleActionMean, sampleCovar, sampleAction);
             //TODO: make it general
@@ -324,7 +332,7 @@ class PPO {
         std::reverse(MemoryNNStates.begin(), MemoryNNStates.end());
         torch::Tensor discounted_reward = torch::tensor({0.0});
         vector<torch::Tensor> rewards;
-        cout << MemoryNNRewards.size() << " " << MemoryNNIsTerminals.size() << " " << MemoryNNStates.size() << endl;
+        // cout << MemoryNNRewards.size() << " " << MemoryNNIsTerminals.size() << " " << MemoryNNStates.size() << endl;
         for(int index = 0; index < MemoryNNRewards.size(); index++){
             auto reward = MemoryNNRewards[index];
             auto is_terminal = MemoryNNIsTerminals[index];
@@ -337,7 +345,7 @@ class PPO {
             discounted_reward = reward + (gamma * discounted_reward);
             rewards.insert(rewards.begin(), discounted_reward);
         }
-
+        cout << "Discounted reward: " << discounted_reward << endl;
         vector<double> newRewards;
         for(auto r: rewards) newRewards.push_back(r.item().toDouble());
         auto newRewardsT = torch::tensor(newRewards);
@@ -346,22 +354,22 @@ class PPO {
         auto old_states = torch::squeeze(torch::stack(MemoryNN.states));
         auto old_actions = torch::squeeze(torch::stack(MemoryNN.actions));
         auto old_logprobs = torch::squeeze(torch::stack(MemoryNN.logprobs));
-        cout << "Memory actions" << MemoryNN.actions.size() << endl;
+        // cout << "Memory actions" << MemoryNN.actions.size() << endl;
         for(int index = 0; index < K_epochs; index++){
             auto res = policy.evaluate(old_states, old_actions);
             auto logprobs = std::get<0>(res);
             auto state_values = std::get<1>(res);
             auto dist_entropy = std::get<2>(res);
-            cout << "Log probs sizes" << logprobs.sizes()[0] << " " << old_logprobs.sizes()[0] << endl;
+            // cout << "Log probs sizes" << logprobs.sizes()[0] << " " << old_logprobs.sizes()[0] << endl;
             auto ratios = torch::exp(logprobs - old_logprobs.detach());
 
             // # Finding Surrogate Loss:
-            cout << "Rewards Size and State size" << newRewardsT.sizes()[0] << " " << state_values.sizes()[0] << endl;
+            // cout << "Rewards Size and State size" << newRewardsT.sizes()[0] << " " << state_values.sizes()[0] << endl;
             auto advantages = newRewardsT - state_values.detach();
             auto surr1 = ratios * advantages;
             auto surr2 = torch::clamp(ratios, 1-eps_clip, 1+eps_clip) * advantages;
             auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
-            
+            cout << "LOSS is: " << loss << endl;
             // # take gradient step
             optimizer->zero_grad();
             loss.mean().backward();
