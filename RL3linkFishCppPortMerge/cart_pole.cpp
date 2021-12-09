@@ -79,8 +79,8 @@ inline void env_run(int myid)
     }  //end of simulation loop
     printf("myid: %d episoe: %d reward: %f\n", myid,i,episode_reward);
     myfile <<"myid: " << myid;
-    myfile << "episode:"<< i; 
-    myfile <<  "reward:" ;
+    myfile << "\t episode:"<< i; 
+    myfile <<  "\t reward:" ;
     myfile << std::fixed << std::setprecision(8) << episode_reward << endl;
 
   }// end of train loop
