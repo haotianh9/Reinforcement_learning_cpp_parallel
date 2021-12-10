@@ -18,9 +18,11 @@ class MemoryNN {
     vector<torch::Tensor> actions, states, logprobs;
     vector<double> rewards;
     vector<bool> is_terminals;
+    vector<bool> is_dones;
     auto push_reward(double reward, bool terminate, bool done){
         rewards.push_back(reward);
         is_terminals.push_back(terminate);
+        is_dones.push_back(done);
     }
     void merge(MemoryNN& r);
     void clear();
@@ -54,7 +56,7 @@ void MemoryNN::clear(){
     this->logprobs.clear();
     this->rewards.clear();
     this->is_terminals.clear();
-    
+    this->is_dones.clear();
 }
 
 template<typename Scalar>
