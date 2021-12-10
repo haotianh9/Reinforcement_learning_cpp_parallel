@@ -84,7 +84,7 @@ inline void env_run(int myid)
       if(terminate){
         obs.push_back(TERMINATE);
         MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
-        printf("myid: %d episode: %d terminate !!! \n", myid,i); 
+        printf("myid: %d episode: %d TERMINATED!! \n", myid,i); 
         break;
       }else if (j == (N_timestep-1)){
         obs.push_back(DONE);
@@ -107,18 +107,22 @@ inline void env_run(int myid)
 
 // inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, float dbufsrt[]){
 inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, std::vector<float> obs_and_more){
-  cout << "Observation: " << obs_and_more << endl;
+  
   std::vector<float> observation(obs_and_more.begin(), obs_and_more.end() - 2);
+  cout << "Observation: " << observation << ' '
+        << "reward:" << obs_and_more[obs_and_more.size() - 2] << ' '
+        << "train_status:" << obs_and_more.back() << endl;
   auto [action,logprobs] = getAction(observation,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
-
+  cout << "Direct action and logprob: " << action << ' ' << logprobs << endl;
   // TODO generalize learner and memory (class learner as the base class for ppo etc.)
   // ppo.update_memory()
   
-  if (end){
-    action[0]=INVALIDACTION;
-  }
+  if (end) action[0]=INVALIDACTION;
+  
+  cout << "sending action " << action 
+       << "to" << envid << endl;
   MPI_Send(action.data(), control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
-  printf("send action to %d = %f  \n", envid , action[0]);
+  
   float reward = obs_and_more[obs_vars];
   bool terminate = false;
   bool done =false;
@@ -142,9 +146,9 @@ inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n
 }
 
 inline void NN_run(){
-  int n_ep=0;
-  int n_timestep=0;
-  bool end=false;
+  int n_ep = 0;
+  int n_timestep = 0;
+  bool end = false;
   // Memory mem[nprocs-1]; // an array of memorys, each memory object for each environment process
   // MPI_Request reqs[nprocs-1];
   
@@ -156,12 +160,14 @@ inline void NN_run(){
   auto lr = 0.0003;                 // parameters for Adam optimizer
   auto betas = make_tuple(0.9, 0.999);
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
-  //TODO: merge with Memory?
+  
   MemoryNN memNN[nprocs-1];
-  auto updateTimestep = 1900;
+  int updateTimestep = 200;
+
+
   std::vector<float> obs_and_more(obs_vars+2);
   while(true){
-    for (int i=1;i<=nprocs-1;i++){
+    for (int i = 1; i <= nprocs-1; i++){
       MPI_Recv(obs_and_more.data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
       printf("receive observation from %d \n",i);
       // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
@@ -169,10 +175,12 @@ inline void NN_run(){
       n_timestep++;
       cout << "Timestep " << n_timestep << endl;
       if(n_timestep%updateTimestep==0){
-        cout << "Updating " << n_timestep << endl;
+        cout << "UPDATING " << n_timestep << endl;
         MemoryNN mergedMemory;
         for(int proc = 0; proc < nprocs-1; proc++){
-          cout << "States" << memNN[proc].states.size() << endl;
+          cout << "proc" << proc << "States in memory:" << memNN[proc].states << '\n'
+               << "proc" << proc << "Actions in memory:" << memNN[proc].actions << '\n'
+               << "proc" << proc << "Rewards in memory:" << memNN[proc].rewards << endl;
           mergedMemory.merge(memNN[proc]);
           // memNN[proc].clear();
         }
