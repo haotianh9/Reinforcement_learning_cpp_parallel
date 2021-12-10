@@ -425,8 +425,13 @@ tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO p
     //should we return both the action and the log prob here?
     
     torch::Tensor observationTensor = torch::from_blob(observation.data(), {(long int)observation.size()}, torch::TensorOptions().dtype(torch::kFloat32));
+<<<<<<< HEAD
     // cout << "HERE IS WHAT YOU SHOULD LOOK AT" << observation << '\n' 
                 // << observation.data() << '\n' << observationTensor << endl;
+=======
+    cout << "HERE IS WHAT YOU SHOULD LOOK AT" << observation << '\n' 
+                << observation.data() << '\n' << observationTensor << endl;
+>>>>>>> 4b333be834bf2ee637242602861f114720b8c031
     auto [actionTensor, logProbTensor] = ppo.select_action(observationTensor, memoryNN);
     actionTensor = actionTensor.contiguous();
     // action[0]=observation[0]+observation[1];
