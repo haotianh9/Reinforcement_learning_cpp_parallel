@@ -6,7 +6,6 @@
 #include<vector>
 #include<math.h>
 
-#define PRINT_SIZES(a) cout << a[0] <<" " << a[1] << endl
 using namespace std;
 
 
@@ -146,7 +145,7 @@ Eigen::Matrix<double, Eigen::Dynamic, 1> tensorToVector(torch::Tensor& in){
     // cout << "Tensor to vector begin" << endl;
     Eigen::Matrix<double, Eigen::Dynamic, 1> out;
     int d1 = in.sizes()[0];
-  
+
     out.resize(d1, 1);
     for(int i = 0; i < out.rows(); i++){
             out(i,0) = in.index({i}).item().toDouble();
@@ -355,12 +354,11 @@ class PPO {
         //TODO: check
         state = state.reshape({1, -1});
         auto [action, logProb] = policy_old.act(state, MemoryNN);
-        cout << "In select action, after act " << MemoryNN.states << endl;
+        // cout << "In select action, after act " << MemoryNN.states << endl;
         // PRINT_SIZES(action.sizes()) << endl;
         action = action.cpu().flatten();
         // PRINT_SIZES(action.sizes()) << endl;
         return make_tuple(action, logProb);
-
     }
 
     auto update(MemoryNN MemoryNN){
@@ -371,24 +369,28 @@ class PPO {
         std::reverse(MemoryNNIsTerminals.begin(), MemoryNNIsTerminals.end());
         std::reverse(MemoryNNStates.begin(), MemoryNNStates.end());
         torch::Tensor discounted_reward = torch::tensor({0.0});
-        vector<torch::Tensor> rewards;
+        vector<torch::Tensor> discounted_rewards;
         // cout << MemoryNNRewards.size() << " " << MemoryNNIsTerminals.size() << " " << MemoryNNStates.size() << endl;
         for(int index = 0; index < MemoryNNRewards.size(); index++){
             auto reward = MemoryNNRewards[index];
             auto is_terminal = MemoryNNIsTerminals[index];
             auto MemoryNNState = MemoryNNStates[index];
             if(is_terminal){
+                cout << "state to critic" << MemoryNNState.squeeze() << endl;;
                 auto value = policy.critic->forward(MemoryNNState.squeeze());
                 discounted_reward = value;
-                
+                cout << "value: \n" << value << endl;
             }
             discounted_reward = reward + (gamma * discounted_reward);
-            rewards.insert(rewards.begin(), discounted_reward);
+            discounted_rewards.insert(discounted_rewards.begin(), discounted_reward);
         }
-        cout << "Discounted reward: " << discounted_reward << endl;
+        cout << "rewards: " << MemoryNNRewards << '\n'
+                << "Discounted reward: " << discounted_rewards << endl;
         vector<double> newRewards;
-        for(auto r: rewards) newRewards.push_back(r.item().toDouble());
+        for(auto r: discounted_rewards) newRewards.push_back(r.item().toDouble());
+        cout << "newRewards: \n" << newRewards << endl;
         auto newRewardsT = torch::tensor(newRewards);
+        cout << "newRewardsT: \n" << newRewardsT << endl;
         // auto tensorRewards = torch::tensor(rewards);
         // rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
         auto old_states = torch::squeeze(torch::stack(MemoryNN.states));
@@ -407,6 +409,7 @@ class PPO {
             // # Finding Surrogate Loss:
             // cout << "Rewards Size and State size" << newRewardsT.sizes()[0] << " " << state_values.sizes()[0] << endl;
             auto advantages = newRewardsT - state_values.detach();
+            cout << "advantages: \n" << advantages << endl;
             auto surr1 = ratios * advantages;
             auto surr2 = torch::clamp(ratios, 1-eps_clip, 1+eps_clip) * advantages;
             auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
@@ -475,8 +478,7 @@ tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO p
 
 
     auto logProb = logProbTensor.item<float>();
-    cout << "In get action, before return" << memoryNN.states << endl;
+    // cout << "In get action, before return" << memoryNN.states << endl;
     return {actionVec, logProb};
 }
-
 #endif

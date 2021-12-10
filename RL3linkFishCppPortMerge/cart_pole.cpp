@@ -113,7 +113,7 @@ inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n
   cout << "Direct action and logprob: " << action << ' ' << logprobs << endl;
   // TODO generalize learner and memory (class learner as the base class for ppo etc.)
   // ppo.update_memory()
-  cout << "In respond action before send " << memNN.states << endl;
+  // cout << "In respond action before send " << memNN.states << endl;
   if (end) action[0]=INVALIDACTION;
   
   cout << "sending action " << action << ' '
@@ -157,7 +157,7 @@ inline void NN_run(){
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
   
   MemoryNN memNN[nprocs-1];
-  int updateTimestep = 40;
+  int updateTimestep = 20;
 
 
   std::vector<float> obs_and_more(obs_vars+2);
@@ -167,7 +167,8 @@ inline void NN_run(){
       printf("receive observation from %d \n",i);
       // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
       respond_action(i,memNN[i-1], ppo, end,n_ep,obs_and_more);
-      cout << "After respond action, the memory is: " << memNN[i-1].states << endl;
+      cout << "##########################################################################################" << endl;
+      // cout << "After respond action, the memory is: " << memNN[i-1].states << endl;
       n_timestep++;
       cout << "Timestep " << n_timestep << endl;
       if(n_timestep%updateTimestep==0){
