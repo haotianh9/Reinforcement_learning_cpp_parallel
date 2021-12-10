@@ -263,8 +263,8 @@ struct ActorCritic: torch::nn::Module {
 
         auto sampledAction_eigen = normalSolver.samples(1);
         auto sampledAction = eigenToTensor(sampledAction_eigen);
-        cout <<  sampledAction << endl;
-        cout <<  sampledAction_eigen << endl;
+        // cout << "sampled action" << sampledAction << endl;
+        // cout << "sampled action_eigen" << sampledAction_eigen << endl;
         // cout << "CLEAR FOUR" << endl;
         auto sampledActionLogProb = multivariateLogProb(action_mean, cov_mat, sampledAction);
         // auto dist = torch::MultivariateNormal(action_mean, cov_mat);
@@ -274,7 +274,7 @@ struct ActorCritic: torch::nn::Module {
         // cout << "UNTIL HERE OBS IS: " << state << endl;
         MemoryNN.states.push_back(state);
         // cout << "OBS in MEMORY IS: " << MemoryNN.states << endl;
-        cout << "OBS in MEMORY has size: " << MemoryNN.states.size() << endl;
+        // cout << "OBS in MEMORY has size: " << MemoryNN.states.size() << endl;
         MemoryNN.actions.push_back(action);
         MemoryNN.logprobs.push_back(log_prob);
         return make_tuple(action.detach(), log_prob);

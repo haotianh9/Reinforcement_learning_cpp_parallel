@@ -48,9 +48,9 @@ inline void env_run(int myid)
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
     {
-      printf("% d received action \n",myid);
       std::vector<float> action(control_vars);
       MPI_Recv(action.data(), control_vars, MPI_FLOAT, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // receive action
+      printf("%d receive action = %f  \n", myid, action[0]);
       if (isnan(action[0])){
         printf("nan bug!!!"); 
         cout << "Observation that led to problem is:" << ' ' << obs << endl;
@@ -61,7 +61,7 @@ inline void env_run(int myid)
         action[k] = (action[k]+1)*(upper_action_bound[k] - lower_action_bound[k])/2 + lower_action_bound[k];
       cout << "action after scaling:" << ' ' << action << endl;
       // std::vector<double> action(action,action+control_vars);
-      printf("%d receive action = %f  \n", myid, action[0]);
+
       if (action[0] == INVALIDACTION){
         printf("environment node %d done \n", myid);
         return;
@@ -119,7 +119,7 @@ inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n
   cout << "sending action " << action << ' '
        << "to" << ' ' << envid << endl;
   MPI_Send(action.data(), control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
-  cout << "In respond action after send " << memNN.states << endl;
+  // cout << "In respond action after send " << memNN.states << endl;
   float reward = obs_and_more[obs_vars];
   bool terminate = false;
   bool done =false;
@@ -144,7 +144,6 @@ inline void NN_run(){
   int n_ep = 0;
   int n_timestep = 0;
   bool end = false;
-  // Memory mem[nprocs-1]; // an array of memorys, each memory object for each environment process
   // MPI_Request reqs[nprocs-1];
   
   auto action_std = 0.2;            // constant std for action distribution (Multivariate Normal)
@@ -164,7 +163,7 @@ inline void NN_run(){
   while(true){
     for (int i = 1; i <= nprocs-1; i++){
       MPI_Recv(obs_and_more.data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
-      printf("receive observation from %d \n",i);
+      printf("received observations and more from %d \n",i);
       // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
       respond_action(i,memNN[i-1], ppo, end,n_ep,obs_and_more);
       cout << "##########################################################################################" << endl;
