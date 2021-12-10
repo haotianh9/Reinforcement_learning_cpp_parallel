@@ -56,7 +56,7 @@ void MemoryNN::clear(){
     this->logprobs.clear();
     this->rewards.clear();
     this->is_terminals.clear();
-    
+    this->is_dones.clear();
 }
 
 template<typename Scalar>
