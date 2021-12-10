@@ -59,11 +59,11 @@ inline void env_run(int myid)
     {
       // MPI_Irecv(dbufa, control_vars, MPI_DOUBLE, 1, 10, MPI_COMM_WORLD, &request);
       // MPI_Wait( &request, &status);
-      MPI_Recv(dbufa, control_vars, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD, &status); // recieve action
+      MPI_Recv(dbufa, control_vars, MPI_DOUBLE, NNnode, myid, MPI_COMM_WORLD, &status); // receive action
       // std::vector<double> action(control_vars);
       // for (int i=0;i<control_vars;i++) action[i]=dbufa[i];
       std::vector<double> action(dbufa,dbufa+control_vars);
-      printf("%d recieve action = %f  \n", myid, action[0]);
+      printf("%d receive action = %f  \n", myid, action[0]);
       // if(comm->terminateTraining()) return; // exit program
 
       bool poleFallen = env.advance(action); //advance the simulation:
@@ -89,7 +89,7 @@ inline void NN_run(int nproc){
   for (int i=0;i<Nepisodes;i++)
     {
       
-      // recieve intial state
+      // receive intial state
 
       MPI_Recv(dbuf, state_vars, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &status);
       // MPI_Irecv(dbuf, state_vars, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &request);
@@ -98,17 +98,17 @@ inline void NN_run(int nproc){
       // for (int i=0;i<state_vars;i++) state[i]=dbuf[i];
       std::vector<double> state(dbuf,dbuf+state_vars);
 
-      printf("recieve state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
+      printf("receive state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
       for (int j=0; j <N_timestep; j++)
       { 
-        // printf("recieve state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
+        // printf("receive state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
         std::vector<double> action =getAction(state,control_vars);
    
         // for (int i=0;i<control_vars;i++) dbufa[i]=action[i];
         std::copy(action.begin(), action.end(), dbufa);
         MPI_Send(dbufa, control_vars, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD); // send action
         printf("send action to %d = %f  \n", 1 , action[0]);
-        MPI_Recv(dbufsrt, state_vars+2, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &status); // recieve state, reward, termination
+        MPI_Recv(dbufsrt, state_vars+2, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, &status); // receive state, reward, termination
         // MPI_Irecv(dbufsrt, state_vars+2, MPI_DOUBLE, 0, 10, MPI_COMM_WORLD, &request);
         // MPI_Wait( &request, &status);
 
@@ -117,7 +117,7 @@ inline void NN_run(int nproc){
         state.insert(state.begin(),std::begin(dbufsrt),std::begin(dbufsrt)+state_vars);
         // std::vector<double> state(dbufsrt,dbufsrt+state_vars);  //creating a new vector here will cause problem
 
-        // printf("recieve state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
+        // printf("receive state from %d = %f %f %f %f %f %f \n",1, state[0] ,state[1], state[2] , state[3] ,state[4], state[5]);
         float reward=dbufsrt[state_vars];
         bool terminal = true;
         if (abs(dbufsrt[state_vars+1]) < 1E-3){

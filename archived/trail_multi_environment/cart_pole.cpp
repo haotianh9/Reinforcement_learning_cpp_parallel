@@ -45,9 +45,9 @@ inline void env_run(int myid)
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
     {
-      MPI_Recv(dbufa, control_vars, MPI_DOUBLE, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // recieve action
+      MPI_Recv(dbufa, control_vars, MPI_DOUBLE, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // receive action
       std::vector<double> action(dbufa,dbufa+control_vars);
-      printf("%d recieve action = %f  \n", myid, action[0]);
+      printf("%d receive action = %f  \n", myid, action[0]);
       if (action[0] == invalidaction){
         printf("environment node %d done \n", myid);
         return;

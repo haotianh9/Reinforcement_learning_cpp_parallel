@@ -31,7 +31,7 @@ inline void center_node(){
     //   printf("0: %d \n", i);
     //   for (int j=1;j<nprocs;j++){
     //     MPI_Recv(dbuf_r, size, MPI_DOUBLE, j, j, MPI_COMM_WORLD, &status);
-    //     printf("     recieve from process %d  \n",  j);
+    //     printf("     receive from process %d  \n",  j);
     //     MPI_Send(dbuf, size, MPI_DOUBLE, j, j+nprocs*2, MPI_COMM_WORLD);
     //     printf("     send to process %d \n",  j);
     //   }
@@ -46,7 +46,7 @@ inline void center_node(){
       for (int i=0; i < Num; i++)
       {
         MPI_Recv(dbuf_r, size, MPI_DOUBLE, j, j, MPI_COMM_WORLD, &status);
-        printf("     recieve from process %d  \n",  j);
+        printf("     receive from process %d  \n",  j);
         MPI_Send(dbuf, size, MPI_DOUBLE, j, j+nprocs*2, MPI_COMM_WORLD);
         printf("     send to process %d \n",  j);
       }
@@ -63,7 +63,7 @@ inline void distributed_node(int myid){
         MPI_Send(dbuf, size, MPI_DOUBLE, C_Node, myid, MPI_COMM_WORLD);
         printf("send from process %d \n",  myid);
         MPI_Recv(dbuf_r, size, MPI_DOUBLE, C_Node, myid+nprocs*2, MPI_COMM_WORLD, &status);
-        printf(" process %d recieve \n",  myid);
+        printf(" process %d receive \n",  myid);
     }
 }
 

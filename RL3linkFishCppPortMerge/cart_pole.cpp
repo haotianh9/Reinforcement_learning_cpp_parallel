@@ -48,20 +48,23 @@ inline void env_run(int myid)
 
     MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);
     printf("%d send obs = %f %f %f %f %f %f \n",myid, obs[0] ,obs[1], obs[2] , obs[3] ,obs[4], obs[5]);
-
+    
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
     {
-      printf("% d recieved action",myid);
+      printf("% d received action",myid);
       std::vector<float> action(control_vars);
-      MPI_Recv(action.data(), control_vars, MPI_FLOAT, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // recieve action
+      MPI_Recv(action.data(), control_vars, MPI_FLOAT, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // receive action
       if (isnan(action[0])){
         printf("nan bug!!!"); 
         exit(1);
       }
-      action[0]*=10;
+      cout << "before scaling" << action << endl;
+      for (int k = 0; k < action.size(); k++) 
+        action[k] = (action[k]+1)*(upper_action_bound[k] - lower_action_bound[k])/2 + lower_action_bound[k];
+      cout << "after scaling" << action << endl;
       // std::vector<double> action(action,action+control_vars);
-      printf("%d recieve action = %f  \n", myid, action[0]);
+      printf("%d receive action = %f  \n", myid, action[0]);
       if (action[0] == INVALIDACTION){
         printf("environment node %d done \n", myid);
         return;
@@ -111,7 +114,7 @@ inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n
   // TODO generalize learner and memory (class learner as the base class for ppo etc.)
   // ppo.update_memory()
   
-   if (end){
+  if (end){
     action[0]=INVALIDACTION;
   }
   MPI_Send(action.data(), control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
@@ -160,7 +163,7 @@ inline void NN_run(){
   while(true){
     for (int i=1;i<=nprocs-1;i++){
       MPI_Recv(obs_and_more.data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
-      printf("recieve observation from %d",i);
+      printf("receive observation from %d \n",i);
       // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
       respond_action(i,memNN[i-1], ppo, end,n_ep,obs_and_more);
       n_timestep++;
