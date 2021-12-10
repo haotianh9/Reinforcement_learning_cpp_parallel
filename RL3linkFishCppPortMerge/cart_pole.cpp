@@ -20,7 +20,6 @@
 #include "ppo_nn.h"
 inline void env_run(int myid)
 {
-  
   printf("environment running on process myid: %d \n", myid);
   //OPTIONAL: action bounds
   bool bounded = true;
@@ -40,10 +39,7 @@ inline void env_run(int myid)
     // cout << "ORIGINAL" << obs_raw << typeid(obs_raw[0]).name() << endl;
     vector<float> obs(obs_raw.begin(), obs_raw.end());
     // cout << "NEW" << obs << typeid(obs[0]).name() << endl;
-    // for (int i=0;i<obs_vars;i++) dbuf[i]=obs[i];
-    // std::copy(obs.begin(), obs.end(), dbufsrt);
-    // dbufsrt[obs_vars]=0;
-    // dbufsrt[obs_vars+1]=3;
+
     obs.push_back(0); obs.push_back(START);
 
     MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);
@@ -52,14 +48,15 @@ inline void env_run(int myid)
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
     {
-      printf("% d received action",myid);
+      printf("% d received action \n",myid);
       std::vector<float> action(control_vars);
       MPI_Recv(action.data(), control_vars, MPI_FLOAT, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // receive action
       if (isnan(action[0])){
         printf("nan bug!!!"); 
+        cout << "Observation that led to problem is:" << ' ' << obs << endl;
         exit(1);
       }
-      cout << "action before scaling:" << ' ' << action << endl;
+      // cout << "action before scaling:" << ' ' << action << endl;
       for (int k = 0; k < action.size(); k++) 
         action[k] = (action[k]+1)*(upper_action_bound[k] - lower_action_bound[k])/2 + lower_action_bound[k];
       cout << "action after scaling:" << ' ' << action << endl;
@@ -141,8 +138,6 @@ inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n
   if (!std::abs(obs_and_more[obs_vars+1]-START) < 1E-3){
     memNN.push_reward(reward, terminate, done);
   }
-  // cout << "Obs vars are:  " << dbufsrt[obs_vars+1]-3 << " " << "Start is: " << start << " " << done << " " << " " << terminate <<  endl;
-
 }
 
 inline void NN_run(){
@@ -162,7 +157,7 @@ inline void NN_run(){
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
   
   MemoryNN memNN[nprocs-1];
-  int updateTimestep = 80;
+  int updateTimestep = 40;
 
 
   std::vector<float> obs_and_more(obs_vars+2);
