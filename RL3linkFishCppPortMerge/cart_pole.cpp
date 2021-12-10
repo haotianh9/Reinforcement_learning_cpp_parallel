@@ -32,7 +32,7 @@ inline void env_run(int myid)
   for (int i=0;i<(int)(Nepisodes/(nprocs-1));i++)
   {
     double episode_reward=0.0;
-    printf("myid: %d episoe: %d \n", myid,i);
+    printf("myid: %d episode: %d \n", myid,i);
     env.reset(); // prng with different seed on each process
     //send initial obs
     auto obs_raw = env.getobs();
@@ -81,7 +81,7 @@ inline void env_run(int myid)
       if(terminate){
         obs.push_back(TERMINATE);
         MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
-        printf("myid: %d episoe: %d terminate !!! \n", myid,i); 
+        printf("myid: %d episode: %d terminate !!! \n", myid,i); 
         break;
       }else if (j == (N_timestep-1)){
         obs.push_back(DONE);
@@ -91,7 +91,7 @@ inline void env_run(int myid)
         MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }
     }  //end of simulation loop
-    printf("myid: %d episoe: %d reward: %f\n", myid,i,episode_reward);
+    printf("myid: %d episode: %d reward: %f\n", myid,i,episode_reward);
     myfile <<"myid: " << myid;
     myfile << "\t episode:"<< i; 
     myfile <<  "\t reward:" ;
