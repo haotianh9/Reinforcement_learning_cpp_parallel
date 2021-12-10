@@ -52,6 +52,7 @@ inline void env_run(int myid)
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
     {
+      printf("% d recieved action",myid);
       MPI_Recv(dbufa, control_vars, MPI_FLOAT, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // recieve action
       
       dbufa[0]*=10;
@@ -96,16 +97,17 @@ inline void env_run(int myid)
 
 // inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, float dbufsrt[]){
 inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, std::vector<float> obs_and_more){
-  // cout << "Observation: " << obs_and_more << endl;
+  cout << "Observation: " << obs_and_more << endl;
   std::vector<float> observation(obs_and_more.begin(), obs_and_more.end() - 2);
   auto [action,logprobs] = getAction(observation,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
 
   // TODO generalize learner and memory (class learner as the base class for ppo etc.)
   // ppo.update_memory()
-  if (end){
-    dbufa[0]=INVALIDACTION;
+  
+   if (end){
+    action[0]=INVALIDACTION;
   }
-  MPI_Send(dbufa, control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
+  MPI_Send(action.data(), control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
   printf("send action to %d = %f  \n", envid , action[0]);
   float reward = obs_and_more[obs_vars];
   bool terminate = false;
@@ -147,10 +149,11 @@ inline void NN_run(){
   //TODO: merge with Memory?
   MemoryNN memNN[nprocs-1];
   auto updateTimestep = 1900;
-  std::vector<float> obs_and_more;
+  std::vector<float> obs_and_more(obs_vars+2);
   while(true){
     for (int i=1;i<=nprocs-1;i++){
       MPI_Recv(obs_and_more.data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
+      printf("recieve observation from %d",i);
       // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
       respond_action(i,memNN[i-1], ppo, end,n_ep,obs_and_more);
       n_timestep++;
