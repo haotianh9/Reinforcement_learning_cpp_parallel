@@ -78,10 +78,14 @@ torch::Tensor eigenToTensor(Eigen::Matrix<Scalar, Eigen::Dynamic, -1> mat){
 auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch::Tensor& action){
     // cout << covar << endl;
     // cout << covar.inverse() << endl;
-    // cout << "Action is: " << action.sizes()[0] << endl;
+
+    // cout << "Action is: " << action << endl;
+    // cout << "Action mean is: " << action_mean << endl;
+    // cout << "covar is: " << covar << endl;
     auto diff = action - action_mean;
-    // cout << "Diff sizes " << diff.sizes() << endl;
-    // cout << diff.transpose(0, 1) << endl;
+    // cout << "Diff sizes " << diff << endl;
+    
+    // cout << "diff " << diff << endl;
     auto covarInverse = covar.inverse();
     // cout << "Multivariate log prob" << endl;
     // printSizes(action_mean);
@@ -90,10 +94,29 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
 
     auto numerator = -0.5 * (diff.transpose(0, 1).matmul(covarInverse.matmul( diff)));
     numerator = torch::exp(numerator);
-    auto denominator = pow(2 * M_PI, action_mean.sizes()[0]) * torch::tensor({torch::det(covar).item().toDouble()}).reshape({1, 1});
+    // cout << "numerator " << numerator << endl;
+    auto denominator = pow(2 * M_PI, action_mean.sizes()[0]) * torch::det(covar).reshape({1, 1});
     denominator = torch::sqrt(denominator);
-    // cout << numerator << endl;
+    // cout << "denominator " << denominator << endl;
     numerator = numerator / denominator;
+    numerator =torch::log(numerator);
+    // cout << action_mean.sizes() << endl;
+    // cout << action_mean.sizes()[0] << endl;
+    // cout << typeid(action_mean.sizes()[0]).name() << endl;
+
+
+    // TODO: rewrite the formular to save computational power
+
+    // auto numerator = -0.5 * (diff.transpose(0, 1).matmul(covarInverse.matmul( diff)));
+    // // numerator = torch::exp(numerator);
+    // cout << "numerator " << numerator << endl;
+    // cout << action_mean.sizes() << endl;
+    // auto denominator = torch::log(torch::Tensor(2 * (float)M_PI) )* (float)action_mean.sizes()[0] + torch::log(torch::det(covar));
+    // denominator = denominator / 2;
+    // cout << "denominator " << denominator << endl;
+    // numerator = numerator - denominator;
+
+
     return numerator;
 
 }
@@ -208,7 +231,7 @@ struct ActorCritic: torch::nn::Module {
         // auto dist = torch::MultivariateNormal(action_mean, cov_mat);
         // cout << "CLEAR five" << endl;
         torch::Tensor action = sampledAction, log_prob = sampledActionLogProb;
-        
+        // cout << log_prob << endl;
         MemoryNN.states.push_back(state);
         MemoryNN.actions.push_back(action);
         MemoryNN.logprobs.push_back(log_prob);
@@ -262,6 +285,7 @@ struct ActorCritic: torch::nn::Module {
             // cout << "Action sizes" << " " << action.sizes()[1] << " " << action.sizes()[2] << endl;
             auto sampleAction = action.index({sample}).reshape({action.sizes()[1]?action.sizes()[1]:1, action.sizes()[2]?action.sizes()[2]:1});
             auto action_logprob = multivariateLogProb(sampleActionMean, sampleCovar, sampleAction);
+            cout << "Evaluation action_logprob " << action_logprob << endl;
             //TODO: make it general
             action_logprobs.index({sample}) = action_logprob.squeeze();
             auto sample_dist_entropy = multivariateEntropy(sampleActionMean.sizes()[0], sampleCovar);
@@ -361,6 +385,7 @@ class PPO {
         auto old_logprobs = torch::squeeze(torch::stack(MemoryNN.logprobs));
         // cout << "Memory actions" << MemoryNN.actions.size() << endl;
         for(int index = 0; index < K_epochs; index++){
+            cout << "begin evaluation !!!!!!!!!" << endl;
             auto res = policy.evaluate(old_states, old_actions);
             auto logprobs = std::get<0>(res);
             auto state_values = std::get<1>(res);
