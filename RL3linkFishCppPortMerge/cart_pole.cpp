@@ -59,10 +59,10 @@ inline void env_run(int myid)
         printf("nan bug!!!"); 
         exit(1);
       }
-      cout << "before scaling" << action << endl;
+      cout << "action before scaling:" << ' ' << action << endl;
       for (int k = 0; k < action.size(); k++) 
         action[k] = (action[k]+1)*(upper_action_bound[k] - lower_action_bound[k])/2 + lower_action_bound[k];
-      cout << "after scaling" << action << endl;
+      cout << "action after scaling:" << ' ' << action << endl;
       // std::vector<double> action(action,action+control_vars);
       printf("%d receive action = %f  \n", myid, action[0]);
       if (action[0] == INVALIDACTION){
@@ -119,8 +119,8 @@ inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n
   
   if (end) action[0]=INVALIDACTION;
   
-  cout << "sending action " << action 
-       << "to" << envid << endl;
+  cout << "sending action " << action << ' '
+       << "to" << ' ' << envid << endl;
   MPI_Send(action.data(), control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
   
   float reward = obs_and_more[obs_vars];
@@ -162,7 +162,7 @@ inline void NN_run(){
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
   
   MemoryNN memNN[nprocs-1];
-  int updateTimestep = 200;
+  int updateTimestep = 80;
 
 
   std::vector<float> obs_and_more(obs_vars+2);
@@ -178,9 +178,9 @@ inline void NN_run(){
         cout << "UPDATING " << n_timestep << endl;
         MemoryNN mergedMemory;
         for(int proc = 0; proc < nprocs-1; proc++){
-          cout << "proc" << proc << "States in memory:" << memNN[proc].states << '\n'
-               << "proc" << proc << "Actions in memory:" << memNN[proc].actions << '\n'
-               << "proc" << proc << "Rewards in memory:" << memNN[proc].rewards << endl;
+          cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc].states << '\n'
+               << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc].actions << '\n'
+               << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc].rewards << endl;
           mergedMemory.merge(memNN[proc]);
           // memNN[proc].clear();
         }

@@ -208,8 +208,9 @@ struct ActorCritic: torch::nn::Module {
         // auto dist = torch::MultivariateNormal(action_mean, cov_mat);
         // cout << "CLEAR five" << endl;
         torch::Tensor action = sampledAction, log_prob = sampledActionLogProb;
-        
+        cout << "UNTIL HERE OBS IS: " << state << endl;
         MemoryNN.states.push_back(state);
+        cout << "OBS in MEMORY IS: " << MemoryNN.states << endl;
         MemoryNN.actions.push_back(action);
         MemoryNN.logprobs.push_back(log_prob);
         return make_tuple(action.detach(), log_prob);
@@ -436,8 +437,7 @@ tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO p
     // logprob=0.2;
     // PRINT_SIZES(actionTensor.sizes());
     vector<float> actionVec(actionTensor.data_ptr<float>(), actionTensor.data_ptr<float>() + actionTensor.numel());
-    // for (int i = 0; i < actionTensor.sizes()[0]; i++) 
-    //     actionVec.push_back(actionTensor.index({i}).item());
+
 
     auto logProb = logProbTensor.item<float>();
     return {actionVec, logProb};

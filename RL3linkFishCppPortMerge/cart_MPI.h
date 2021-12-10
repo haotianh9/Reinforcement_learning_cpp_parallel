@@ -15,7 +15,7 @@ const int obs_vars = 6; // x, vel, angvel, angle, cosine, sine
 
 double dbufa[control_vars];
 double dbufsrt[obs_vars+2]; // the dbuf is sending these things: state, reward, whether an episode terminate or done  or start or not (if terminate 1, if done 2, if start 3, else 0) (terminate means fail; done means reach maximum time step in a period, thus need to add value function, start means the corresponding reward is 0, which is no meaning and will not be stored)
-const int Nepisodes=90000;
-const int N_timestep=100;//Maximum time step in one episode
-const int Max_timestep=9000000;//Maximum training timestep (either define this or define Nepisodes)
+const int Nepisodes=10000;
+const int N_timestep=20;//Maximum time step in one episode
+const int Max_timestep=10000000;//Maximum training timestep (either define this or define Nepisodes)
 std::ofstream myfile;
