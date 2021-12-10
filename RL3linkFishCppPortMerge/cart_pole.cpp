@@ -52,14 +52,15 @@ inline void env_run(int myid)
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
     {
-      printf("% d received action",myid);
+      printf("% d received action\n",myid);
       std::vector<float> action(control_vars);
       MPI_Recv(action.data(), control_vars, MPI_FLOAT, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // receive action
       if (isnan(action[0])){
         printf("nan bug!!!"); 
+        cout << "Observation that led to problem is:" << ' ' << obs << endl;
         exit(1);
       }
-      cout << "action before scaling:" << ' ' << action << endl;
+      // cout << "action before scaling:" << ' ' << action << endl;
       for (int k = 0; k < action.size(); k++) 
         action[k] = (action[k]+1)*(upper_action_bound[k] - lower_action_bound[k])/2 + lower_action_bound[k];
       cout << "action after scaling:" << ' ' << action << endl;
@@ -162,7 +163,7 @@ inline void NN_run(){
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
   
   MemoryNN memNN[nprocs-1];
-  int updateTimestep = 80;
+  int updateTimestep = 40;
 
 
   std::vector<float> obs_and_more(obs_vars+2);

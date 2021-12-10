@@ -239,10 +239,10 @@ struct ActorCritic: torch::nn::Module {
         // cout << "CLEAR five" << endl;
         torch::Tensor action = sampledAction, log_prob = sampledActionLogProb;
         // cout << log_prob << endl;
-        cout << "UNTIL HERE OBS IS: " << state << endl;
+        // cout << "UNTIL HERE OBS IS: " << state << endl;
         MemoryNN.states.push_back(state);
-        cout << "OBS in MEMORY IS: " << MemoryNN.states << endl;
-        cout << "OBS in MEMORY SIZE" << MemoryNN.states.size() << endl;
+        // cout << "OBS in MEMORY IS: " << MemoryNN.states << endl;
+        cout << "OBS in MEMORY has size: " << MemoryNN.states.size() << endl;
         MemoryNN.actions.push_back(action);
         MemoryNN.logprobs.push_back(log_prob);
         return make_tuple(action.detach(), log_prob);
