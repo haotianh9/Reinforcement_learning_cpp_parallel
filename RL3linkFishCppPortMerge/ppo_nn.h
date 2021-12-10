@@ -222,11 +222,44 @@ struct ActorCritic: torch::nn::Module {
         // Eigen::Matrix2d eigen_covar = tensorToMatrix2d(cov_mat);
         // cout << "action_mean: " << action_mean << endl;
         // cout << "cov_mat: " << cov_mat << endl;
+
+        // Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean1(2);
+        // eigen_mean1(0,0)=0;
+        // eigen_mean1(1,0)=0;
+        // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar1(2,2);
+        // eigen_covar1(0,0)=0.2;
+        // eigen_covar1(1,1)=0.2;
+        // eigen_covar1(1,0)=0;
+        // eigen_covar1(0,1)=0;
+        // Eigen::EigenMultivariateNormal<double> normalSolver1(eigen_mean1, eigen_covar1);
+        // auto sampledAction_eigen11 = normalSolver1.samples(2);
+        // cout << "test eigen output: 1: " << sampledAction_eigen11 << endl;
+
+        // auto sampledAction_eigen12 = normalSolver1.samples(2);
+        // cout << "test eigen output: 2: " << sampledAction_eigen12 << endl;
+
+        // auto sampledAction_eigen13 = normalSolver1.samples(2);
+        // cout << "test eigen output: 3: " << sampledAction_eigen13 << endl;
+
+
+        // Eigen::EigenMultivariateNormal<double> normalSolver2(eigen_mean1, eigen_covar1);
+        // auto sampledAction_eigen21 = normalSolver2.samples(2);
+        // cout << "test eigen output: 1: " << sampledAction_eigen21 << endl;
+
+        // auto sampledAction_eigen22 = normalSolver2.samples(2);
+        // cout << "test eigen output: 2: " << sampledAction_eigen22 << endl;
+
+        // auto sampledAction_eigen23 = normalSolver2.samples(2);
+        // cout << "test eigen output: 3: " << sampledAction_eigen23 << endl;
+
+
+
         Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToMatrix(action_mean);
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(cov_mat);
         // cout << "CLEAR three" << endl;
         // cout << "eigen_mean: " << eigen_mean << endl;
         // cout << "eigen_covar: " << eigen_covar << endl;
+        
         Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar);
 
         auto sampledAction_eigen = normalSolver.samples(1);
