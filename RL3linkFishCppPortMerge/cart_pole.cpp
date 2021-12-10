@@ -11,7 +11,6 @@
 
 #include "cart_pole.h"
 #include "cart_MPI.h"
-#include "custom_action.h"
 #include "Memory.h"
 #include <iostream>
 #include <fstream>
@@ -38,16 +37,17 @@ inline void env_run(int myid)
     //send initial obs
     auto obs_raw = env.getobs();
     // make sure the data type is float
-    cout << "ORIGINAL" << obs_raw << endl;
-    vector<float> obs(obs_raw.begin(), obs_raw.end())
-    cout << "ORIGINAL" << obs << endl;
+    // cout << "ORIGINAL" << obs_raw << typeid(obs_raw[0]).name() << endl;
+    vector<float> obs(obs_raw.begin(), obs_raw.end());
+    // cout << "NEW" << obs << typeid(obs[0]).name() << endl;
     // for (int i=0;i<obs_vars;i++) dbuf[i]=obs[i];
     // std::copy(obs.begin(), obs.end(), dbufsrt);
     // dbufsrt[obs_vars]=0;
     // dbufsrt[obs_vars+1]=3;
+    obs.push_back(0); obs.push_back(START);
+
     MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);
     printf("%d send obs = %f %f %f %f %f %f \n",myid, obs[0] ,obs[1], obs[2] , obs[3] ,obs[4], obs[5]);
-    
 
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
@@ -62,25 +62,25 @@ inline void env_run(int myid)
         return;
       }
       bool terminate = env.advance(action); //advance the simulation:
-      obs = env.getobs();
+      obs_raw = env.getobs();
       double reward = env.getReward();
       episode_reward+=reward;
       // cout << terminate << endl;
       // send new observation, reward, and whether terminate or not, if terminate send 1, if not send 0
       // for (int i=0;i<obs_vars;i++) dbufsrt[i]=obs[i];
-      std::copy(obs.begin(), obs.end(), dbufsrt);
-      dbufsrt[obs_vars+1]=reward;
+      vector<float> obs(obs_raw.begin(), obs_raw.end());
+      obs.push_back(reward); 
       if(terminate){
-        dbufsrt[obs_vars+1]=1;
-        MPI_Send(dbufsrt, obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
+        obs.push_back(TERMINATE);
+        MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
         printf("myid: %d episoe: %d terminate !!! \n", myid,i); 
         break;
       }else if (j == (N_timestep-1)){
-        dbufsrt[obs_vars+1]=2;
-        MPI_Send(dbufsrt, obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
+        obs.push_back(DONE);
+        MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }else{
-        dbufsrt[obs_vars+1]=0;
-        MPI_Send(dbufsrt, obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
+        obs.push_back(NORMAL);
+        MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }
     }  //end of simulation loop
     printf("myid: %d episoe: %d reward: %f\n", myid,i,episode_reward);
@@ -95,12 +95,10 @@ inline void env_run(int myid)
 }
 
 // inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, float dbufsrt[]){
-inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, float dbufsrt[]){
-  std::vector<float> obs(dbufsrt,dbufsrt+obs_vars);
-  // cout << "Observation: ";
-  // for(int i = 0; i < obs_vars; i++) cout << dbufsrt[i] << " ";
-  // cout << endl;
-  auto [action,logprobs] = getAction(obs,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
+inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, std::vector<float> obs_and_more){
+  // cout << "Observation: " << obs_and_more << endl;
+  std::vector<float> observation(obs_and_more.begin(), obs_and_more.end() - 2);
+  auto [action,logprobs] = getAction(observation,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
 
   // TODO generalize learner and memory (class learner as the base class for ppo etc.)
   // ppo.update_memory()
@@ -109,26 +107,25 @@ inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n
   }
   MPI_Send(dbufa, control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
   printf("send action to %d = %f  \n", envid , action[0]);
-  float reward=dbufsrt[obs_vars];
+  float reward = obs_and_more[obs_vars];
   bool terminate = false;
   bool done =false;
-  bool start =false;
   
   // cout << "Reward is: " << reward << endl;
-  if (std::abs(dbufsrt[obs_vars+1]-1) < 1E-3){
+
+  // TODO: unify the expressions of training state, both here and in memory, using int instead of bool
+  if (std::abs(obs_and_more[obs_vars+1]-TERMINATE) < 1E-3){
     terminate=true;
     n_ep++;
-  }if (std::abs(dbufsrt[obs_vars+1]-2) < 1E-3){
+  }
+  if (std::abs(obs_and_more[obs_vars+1]-DONE) < 1E-3){
     done=true;
     n_ep++;
-  }if (std::abs(dbufsrt[obs_vars+1]-3) < 1E-3){
-    start=true;
   }
-  // cout << "Obs vars are:  " << dbufsrt[obs_vars+1]-3 << " " << "Start is: " << start << " " << done << " " << " " << terminate <<  endl;
-  if (!start){
-
+  if (!std::abs(obs_and_more[obs_vars+1]-START) < 1E-3){
     memNN.push_reward(reward, terminate, done);
   }
+  // cout << "Obs vars are:  " << dbufsrt[obs_vars+1]-3 << " " << "Start is: " << start << " " << done << " " << " " << terminate <<  endl;
 
 }
 
@@ -150,12 +147,12 @@ inline void NN_run(){
   //TODO: merge with Memory?
   MemoryNN memNN[nprocs-1];
   auto updateTimestep = 1900;
+  std::vector<float> obs_and_more;
   while(true){
-
     for (int i=1;i<=nprocs-1;i++){
-      MPI_Recv(dbufsrt, obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
+      MPI_Recv(obs_and_more.data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
       // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
-      respond_action(i,memNN[i-1], ppo, end,n_ep,dbufsrt);
+      respond_action(i,memNN[i-1], ppo, end,n_ep,obs_and_more);
       n_timestep++;
       cout << "Timestep " << n_timestep << endl;
       if(n_timestep%updateTimestep==0){
@@ -196,7 +193,7 @@ inline void NN_run(){
 
     if (end or (n_ep >= Nepisodes)){
       printf("NN node exit");
-      printf("check: memory length of 1's environment is %ld", mem[0].action_list.size());
+      // printf("check: memory length of 1's environment is %ld", mem[0].action_list.size());
       break;
     }
     if (n_timestep >= Max_timestep){
@@ -207,7 +204,6 @@ inline void NN_run(){
 }
 int main(int argc, char**argv)
 {
-
   int myid;
   int n;
   myfile.open ("../log.txt");
