@@ -235,6 +235,7 @@ struct ActorCritic: torch::nn::Module {
         cout << "UNTIL HERE OBS IS: " << state << endl;
         MemoryNN.states.push_back(state);
         cout << "OBS in MEMORY IS: " << MemoryNN.states << endl;
+        cout << "OBS in MEMORY SIZE" << MemoryNN.states.size() << endl;
         MemoryNN.actions.push_back(action);
         MemoryNN.logprobs.push_back(log_prob);
         return make_tuple(action.detach(), log_prob);
@@ -347,6 +348,7 @@ class PPO {
         //TODO: check
         state = state.reshape({1, -1});
         auto [action, logProb] = policy_old.act(state, MemoryNN);
+        cout << "In select action, after act " << MemoryNN.states << endl;
         // PRINT_SIZES(action.sizes()) << endl;
         action = action.cpu().flatten();
         // PRINT_SIZES(action.sizes()) << endl;
@@ -453,7 +455,7 @@ tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO p
     // std::vector<double> action(dim);
     //should we return both the action and the log prob here?
     
-    torch::Tensor observationTensor = torch::from_blob(observation.data(), {(long int)observation.size()}, torch::TensorOptions().dtype(torch::kFloat32));
+    torch::Tensor observationTensor = torch::from_blob(observation.data(), {(long int)observation.size()}, torch::TensorOptions().dtype(torch::kFloat32)).clone();
     // cout << "HERE IS WHAT YOU SHOULD LOOK AT" << observation << '\n' 
                 // << observation.data() << '\n' << observationTensor << endl;
     auto [actionTensor, logProbTensor] = ppo.select_action(observationTensor, memoryNN);
@@ -466,6 +468,7 @@ tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO p
 
 
     auto logProb = logProbTensor.item<float>();
+    cout << "In get action, before return" << memoryNN.states << endl;
     return {actionVec, logProb};
 }
 
