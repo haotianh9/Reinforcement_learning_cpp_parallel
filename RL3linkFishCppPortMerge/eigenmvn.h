@@ -86,10 +86,11 @@ namespace Eigen {
 			  const bool use_cholesky=false,const uint64_t &seed=std::mt19937::default_seed)
       :_use_cholesky(use_cholesky)
      {
-        randN.seed(seed);
-	setMean(mean);
-	setCovar(covar);
-      }
+        // A very bad fix of the bug by HH: comment the line which feed the random seed
+        // randN.seed(seed);
+        setMean(mean);
+        setCovar(covar);
+    }
 
     void setMean(const Matrix<Scalar,Dynamic,1>& mean) { _mean = mean; }
     void setCovar(const Matrix<Scalar,Dynamic,Dynamic>& covar)
