@@ -183,11 +183,11 @@ struct ActorCritic: torch::nn::Module {
         // torch::Tensor test = linear(state);
         // cout << "ACT ";
         // PRINT_SIZES(state.sizes());
-        cout << "CLEAR one" << endl;
+        // cout << "CLEAR one" << endl;
         torch::Tensor action_mean = actor->forward(state);
         
         torch::Tensor cov_mat = torch::diag(action_var);
-        cout << "CLEAR two" << endl;
+        // cout << "CLEAR two" << endl;
         // cout << "Action " << action_mean << endl;
         // cout << "Cov Mat" << cov_mat << endl;
         // PRINT_SIZES(action_mean.sizes());
@@ -197,14 +197,14 @@ struct ActorCritic: torch::nn::Module {
         // Eigen::Matrix2d eigen_covar = tensorToMatrix2d(cov_mat);
         Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToMatrix(action_mean);
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(cov_mat);
-        cout << "CLEAR three" << endl;
+        // cout << "CLEAR three" << endl;
         Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar);
         auto sampledAction = eigenToTensor(normalSolver.samples(1));
         // cout <<  normalSolver.samples(1) << endl;
-        cout << "CLEAR FOUR" << endl;
+        // cout << "CLEAR FOUR" << endl;
         auto sampledActionLogProb = multivariateLogProb(action_mean, cov_mat, sampledAction);
         // auto dist = torch::MultivariateNormal(action_mean, cov_mat);
-        cout << "CLEAR five" << endl;
+        // cout << "CLEAR five" << endl;
         torch::Tensor action = sampledAction, log_prob = sampledActionLogProb;
         
         MemoryNN.states.push_back(state);
