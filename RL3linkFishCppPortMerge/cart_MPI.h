@@ -6,6 +6,7 @@
 #define INVALIDACTION std::numeric_limits<float>::max()
 MPI_Status status;
 MPI_Request request;
+enum TRAIN_STATUS {NORMAL = 0, TERMINATE, DONE, START};
 
 int nprocs;
 

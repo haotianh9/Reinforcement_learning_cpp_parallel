@@ -8,31 +8,7 @@
 
 #define PRINT_SIZES(a) cout << a[0] <<" " << a[1] << endl
 using namespace std;
-tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO ppo, MemoryNN& memoryNN)
-{
-    // std::vector<double> action(dim);
-    //should we return both the action and the log prob here?
-    
-    torch::Tensor observationTensor = torch::from_blob(observation.data(), {(long int)observation.size()}, torch::TensorOptions().dtype(torch::kFloat32));
-    cout << "HERE IS WHAT YOU SHOULD LOOK AT" << observation << '\n' 
-                << observation.data() << '\n' << observationTensor << endl;
-    auto [actionTensor, logProbTensor] = ppo.select_action(observationTensor, memoryNN);
-    // action[0]=observation[0]+observation[1];
-    // float logprob;
-    // logprob=0.2;
-    // PRINT_SIZES(actionTensor.sizes());
-    vector<double> actionTensorDouble;
-    for(int i = 0; i < actionTensor.sizes()[0]; i++){
-            actionTensorDouble.push_back(actionTensor.index({i}).item().toDouble());
-    }
-    // cout << actionTensorDouble.size() << endl;
-    // for(auto a: actionTensorDouble){
-    //     cout << a << " ";
-    // }
-    // cout << endl;
-    auto logProb = logProbTensor.item().toDouble();
-    return {actionTensorDouble, logProb};
-}
+
 
 void printSizes(torch::Tensor& a){
     cout << a.sizes()[0] << " " << a.sizes()[1] << endl;
@@ -48,8 +24,6 @@ class MemoryNN {
     }
     void merge(MemoryNN& r);
     void clear();
-
-
 
 
 
@@ -209,11 +183,11 @@ struct ActorCritic: torch::nn::Module {
         // torch::Tensor test = linear(state);
         // cout << "ACT ";
         // PRINT_SIZES(state.sizes());
-        cout << "CLEAR one" << endl;
+        // cout << "CLEAR one" << endl;
         torch::Tensor action_mean = actor->forward(state);
         
         torch::Tensor cov_mat = torch::diag(action_var);
-        cout << "CLEAR two" << endl;
+        // cout << "CLEAR two" << endl;
         // cout << "Action " << action_mean << endl;
         // cout << "Cov Mat" << cov_mat << endl;
         // PRINT_SIZES(action_mean.sizes());
@@ -223,14 +197,14 @@ struct ActorCritic: torch::nn::Module {
         // Eigen::Matrix2d eigen_covar = tensorToMatrix2d(cov_mat);
         Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToMatrix(action_mean);
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(cov_mat);
-        cout << "CLEAR three" << endl;
+        // cout << "CLEAR three" << endl;
         Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar);
         auto sampledAction = eigenToTensor(normalSolver.samples(1));
         // cout <<  normalSolver.samples(1) << endl;
-        cout << "CLEAR FOUR" << endl;
+        // cout << "CLEAR FOUR" << endl;
         auto sampledActionLogProb = multivariateLogProb(action_mean, cov_mat, sampledAction);
         // auto dist = torch::MultivariateNormal(action_mean, cov_mat);
-        cout << "CLEAR five" << endl;
+        // cout << "CLEAR five" << endl;
         torch::Tensor action = sampledAction, log_prob = sampledActionLogProb;
         
         MemoryNN.states.push_back(state);
@@ -445,7 +419,26 @@ class PPO {
     torch::nn::MSELoss MseLoss;
 };
 
+tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO ppo, MemoryNN& memoryNN)
+{
+    // std::vector<double> action(dim);
+    //should we return both the action and the log prob here?
+    
+    torch::Tensor observationTensor = torch::from_blob(observation.data(), {(long int)observation.size()}, torch::TensorOptions().dtype(torch::kFloat32));
+    // cout << "HERE IS WHAT YOU SHOULD LOOK AT" << observation << '\n' 
+                // << observation.data() << '\n' << observationTensor << endl;
+    auto [actionTensor, logProbTensor] = ppo.select_action(observationTensor, memoryNN);
+    actionTensor = actionTensor.contiguous();
+    // action[0]=observation[0]+observation[1];
+    // float logprob;
+    // logprob=0.2;
+    // PRINT_SIZES(actionTensor.sizes());
+    vector<float> actionVec(actionTensor.data_ptr<float>(), actionTensor.data_ptr<float>() + actionTensor.numel());
+    // for (int i = 0; i < actionTensor.sizes()[0]; i++) 
+    //     actionVec.push_back(actionTensor.index({i}).item());
 
-
+    auto logProb = logProbTensor.item<float>();
+    return {actionVec, logProb};
+}
 
 #endif
