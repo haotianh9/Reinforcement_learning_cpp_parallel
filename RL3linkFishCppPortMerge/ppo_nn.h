@@ -18,9 +18,11 @@ class MemoryNN {
     vector<torch::Tensor> actions, states, logprobs;
     vector<double> rewards;
     vector<bool> is_terminals;
+    vector<bool> is_dones;
     auto push_reward(double reward, bool terminate, bool done){
         rewards.push_back(reward);
         is_terminals.push_back(terminate);
+        is_dones.push_back(done);
     }
     void merge(MemoryNN& r);
     void clear();
@@ -427,7 +429,7 @@ tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO p
     torch::Tensor observationTensor = torch::from_blob(observation.data(), {(long int)observation.size()}, torch::TensorOptions().dtype(torch::kFloat32));
     // cout << "HERE IS WHAT YOU SHOULD LOOK AT" << observation << '\n' 
                 // << observation.data() << '\n' << observationTensor << endl;
-    auto [actionTensor, logProbTensor] = ppo.select_action(observationTensor, memoryNN);
+    auto [actionTensor, logProbTensor] = c.select_action(observationTensor, memoryNN);
     actionTensor = actionTensor.contiguous();
     // action[0]=observation[0]+observation[1];
     // float logprob;
