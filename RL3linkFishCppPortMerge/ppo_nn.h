@@ -220,12 +220,19 @@ struct ActorCritic: torch::nn::Module {
         //TODO:NEED To convert to Pytorch
         // Eigen::Vector2d eigen_mean = tensorToVector2d(action_mean);
         // Eigen::Matrix2d eigen_covar = tensorToMatrix2d(cov_mat);
+        // cout << "action_mean: " << action_mean << endl;
+        // cout << "cov_mat: " << cov_mat << endl;
         Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToMatrix(action_mean);
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(cov_mat);
         // cout << "CLEAR three" << endl;
+        // cout << "eigen_mean: " << eigen_mean << endl;
+        // cout << "eigen_covar: " << eigen_covar << endl;
         Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar);
-        auto sampledAction = eigenToTensor(normalSolver.samples(1));
-        // cout <<  normalSolver.samples(1) << endl;
+
+        auto sampledAction_eigen = normalSolver.samples(1);
+        auto sampledAction = eigenToTensor(sampledAction_eigen);
+        cout <<  sampledAction << endl;
+        cout <<  sampledAction_eigen << endl;
         // cout << "CLEAR FOUR" << endl;
         auto sampledActionLogProb = multivariateLogProb(action_mean, cov_mat, sampledAction);
         // auto dist = torch::MultivariateNormal(action_mean, cov_mat);
