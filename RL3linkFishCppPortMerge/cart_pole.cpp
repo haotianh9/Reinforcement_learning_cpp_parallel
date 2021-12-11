@@ -146,7 +146,7 @@ inline void NN_run(){
   bool end = false;
   // MPI_Request reqs[nprocs-1];
   
-  auto action_std = 0.2;            // constant std for action distribution (Multivariate Normal)
+  auto action_std = 0.4;            // constant std for action distribution (Multivariate Normal)
   auto K_epochs = 1;            // update policy for K epochs
   auto eps_clip = 0.2;            // clip parameter for PPO
   auto gamma = 0.99;            // discount factor
@@ -156,8 +156,8 @@ inline void NN_run(){
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
   
   MemoryNN memNN[nprocs-1];
-  int updateTimestep = 20;
-
+  
+  
   std::vector<float> obs_and_more(obs_vars+2);
   while(true){
     for (int i = 1; i <= nprocs-1; i++){
