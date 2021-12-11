@@ -27,8 +27,6 @@ class MemoryNN {
     void merge(MemoryNN& r);
     void clear();
 
-
-
     //TODO: handle done
 
 };
@@ -116,7 +114,6 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
     // cout << "denominator " << denominator << endl;
     // numerator = numerator - denominator;
 
-
     return numerator;
 
 }
@@ -160,7 +157,6 @@ Eigen::Matrix<double, Eigen::Dynamic, 1> tensorToVector(torch::Tensor& in){
 struct ActorCritic: torch::nn::Module {
     ActorCritic(){}
     ActorCritic(int state_dim, int action_dim, double action_std) : actor(register_module("actor", torch::nn::Sequential({
-            //TODO: make it state_dim
             {"linear1", torch::nn::Linear(state_dim, 64)},
             {"tanh1", torch::nn::Tanh(),},
             {"linear2", torch::nn::Linear(64, 32),},
@@ -168,7 +164,7 @@ struct ActorCritic: torch::nn::Module {
             {"linear3", torch::nn::Linear(32, action_dim),},
             {"tanh3", torch::nn::Tanh()}
         }))), critic(register_module("critic", torch::nn::Sequential({
-            //TODO: make it state_dim
+
             {"linear1", torch::nn::Linear(state_dim, 64)},
             {"tanh1", torch::nn::Tanh(),},
             {"linear2", torch::nn::Linear(64, 32),},
@@ -380,7 +376,7 @@ class PPO {
         // outputArchive->save_to(in);
         torch::load(sharedPtrPolicyOld, in);
         // this->policy_old.load_state_dict(this->policy.state_dict());
-   
+
         this->MseLoss = torch::nn::MSELoss();
     }
 
@@ -413,7 +409,6 @@ class PPO {
                 cout << "state to critic" << MemoryNNState.squeeze() << endl;;
                 auto value = policy.critic->forward(MemoryNNState.squeeze());
                 discounted_reward = value;
-                cout << "value: \n" << value << endl;
             }
             discounted_reward = reward + (gamma * discounted_reward);
             discounted_rewards.insert(discounted_rewards.begin(), discounted_reward);
@@ -439,9 +434,8 @@ class PPO {
             auto dist_entropy = std::get<2>(res);
             // cout << "Log probs sizes" << logprobs.sizes()[0] << " " << old_logprobs.sizes()[0] << endl;
             auto ratios = torch::exp(logprobs - old_logprobs.detach());
-
             // # Finding Surrogate Loss:
-            // cout << "Rewards Size and State size" << newRewardsT.sizes()[0] << " " << state_values.sizes()[0] << endl;
+            cout << "value: \n" << state_values << endl;
             auto advantages = newRewardsT - state_values.detach();
             cout << "advantages: \n" << advantages << endl;
             auto surr1 = ratios * advantages;
