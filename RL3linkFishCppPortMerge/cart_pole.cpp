@@ -42,7 +42,6 @@ inline void env_run(int myid)
     // cout << "NEW" << obs << typeid(obs[0]).name() << endl;
 
     obs.push_back(0); obs.push_back(START);
-
     MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);
     // printf("Env %d send obs = %f %f %f %f %f %f \n",myid, obs[0] ,obs[1], obs[2] , obs[3] ,obs[4], obs[5]);
     
@@ -148,7 +147,7 @@ inline void NN_run(){
   // MPI_Request reqs[nprocs-1];
   
   auto action_std = 0.2;            // constant std for action distribution (Multivariate Normal)
-  auto K_epochs = 80;            // update policy for K epochs
+  auto K_epochs = 1;            // update policy for K epochs
   auto eps_clip = 0.2;            // clip parameter for PPO
   auto gamma = 0.99;            // discount factor
   
@@ -158,7 +157,6 @@ inline void NN_run(){
   
   MemoryNN memNN[nprocs-1];
   int updateTimestep = 20;
-
 
   std::vector<float> obs_and_more(obs_vars+2);
   while(true){
