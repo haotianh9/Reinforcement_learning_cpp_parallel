@@ -386,7 +386,7 @@ class PPO {
             auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, Rewards) - 0.01*dist_entropy;
             // cout << "LOSS is: " << loss << endl;
 
-            auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
+            // auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
             cout << "LOSS is: " << loss << endl;
             // # take gradient step
             optimizer->zero_grad();
