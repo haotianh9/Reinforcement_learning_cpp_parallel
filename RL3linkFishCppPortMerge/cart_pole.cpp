@@ -30,8 +30,9 @@ inline void env_run(int myid)
   // while(true) //train loop
   for (int i=0;i<(int)(Nepisodes/(nprocs-1));i++)
   {
+    cout << "*****NEW EPISODE!*****" 
+        << "myid: " << myid << "episode: " << i << endl;
     double episode_reward=0.0;
-    printf("myid: %d episode: %d \n", myid,i);
     env.reset(); // prng with different seed on each process
     //send initial obs
     auto obs_raw = env.getobs();
@@ -43,14 +44,14 @@ inline void env_run(int myid)
     obs.push_back(0); obs.push_back(START);
 
     MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);
-    printf("%d send obs = %f %f %f %f %f %f \n",myid, obs[0] ,obs[1], obs[2] , obs[3] ,obs[4], obs[5]);
+    // printf("Env %d send obs = %f %f %f %f %f %f \n",myid, obs[0] ,obs[1], obs[2] , obs[3] ,obs[4], obs[5]);
     
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
     {
       std::vector<float> action(control_vars);
       MPI_Recv(action.data(), control_vars, MPI_FLOAT, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // receive action
-      printf("%d receive action = %f  \n", myid, action[0]);
+      printf("Env %d received action = %f  \n", myid, action[0]);
       if (isnan(action[0])){
         printf("nan bug!!!"); 
         cout << "Observation that led to problem is:" << ' ' << obs << endl;
@@ -59,7 +60,7 @@ inline void env_run(int myid)
       // cout << "action before scaling:" << ' ' << action << endl;
       for (int k = 0; k < action.size(); k++) 
         action[k] = (action[k]+1)*(upper_action_bound[k] - lower_action_bound[k])/2 + lower_action_bound[k];
-      cout << "action after scaling:" << ' ' << action << endl;
+      cout << "$$$action after scaling:" << ' ' << action << endl;
       // std::vector<double> action(action,action+control_vars);
 
       if (action[0] == INVALIDACTION){
@@ -91,7 +92,7 @@ inline void env_run(int myid)
         MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }
     }  //end of simulation loop
-    printf("myid: %d episode: %d reward: %f\n", myid,i,episode_reward);
+    printf("------myid: %d episode: %d total reward: %f\n", myid,i,episode_reward);
     myfile <<"myid: " << myid;
     myfile << "\t episode:"<< i; 
     myfile <<  "\t reward:" ;
@@ -106,7 +107,7 @@ inline void env_run(int myid)
 inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, std::vector<float> obs_and_more){
   
   std::vector<float> observation(obs_and_more.begin(), obs_and_more.end() - 2);
-  cout << "Observation: " << observation << ' '
+  cout << "$$$Observation: " << observation << ' '
         << "reward:" << obs_and_more[obs_and_more.size() - 2] << ' '
         << "train_status:" << obs_and_more.back() << endl;
   auto [action,logprobs] = getAction(observation,control_vars, ppo, memNN); // here is a C++17 functionality https://stackoverflow.com/questions/321068/returning-multiple-values-from-a-c-function
