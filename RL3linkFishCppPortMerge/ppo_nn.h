@@ -445,7 +445,7 @@ class PPO {
             auto surr1 = ratios * advantages;
             auto surr2 = torch::clamp(ratios, 1-eps_clip, 1+eps_clip) * advantages;
             auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
-            // cout << "LOSS is: " << loss << endl;
+            cout << "LOSS is: " << loss << endl;
             // # take gradient step
             optimizer->zero_grad();
             loss.mean().backward();
@@ -459,6 +459,7 @@ class PPO {
         // outputArchive->save_to(in);
         torch::load(sharedPtrPolicyOld, in);
         
+
          //load_state_dict(self.policy.state_dict()
         
         // # Optimize policy for K epochs:
