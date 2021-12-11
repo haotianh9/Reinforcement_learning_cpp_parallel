@@ -6,9 +6,13 @@
 #include <vector>
 #include <math.h>
 #include <time.h>
-
+#include <random>
 using namespace std;
 
+
+std::random_device rd_NN;
+std::mt19937_64 eng_NN(rd_NN());
+std::uniform_int_distribution<unsigned long> distr_NN;
 
 void printSizes(torch::Tensor& a){
     cout << a.sizes()[0] << " " << a.sizes()[1] << endl;
@@ -256,7 +260,7 @@ struct ActorCritic: torch::nn::Module {
         // cout << "eigen_mean: " << eigen_mean << endl;
         // cout << "eigen_covar: " << eigen_covar << endl;
         
-        Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true);
+        Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true,distr_NN(eng_NN));
 
         auto sampledAction_eigen = normalSolver.samples(1);
         auto sampledAction = eigenToTensor(sampledAction_eigen);
@@ -318,7 +322,7 @@ struct ActorCritic: torch::nn::Module {
             // cout << endl;
             
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(sampleCovar);
-            Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true);
+            Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true,distr_NN(eng_NN));
             // auto squeezedAction = torch::squeeze(action);
             // PRINT_SIZES(squeezedAction.sizes());
             // cout << "Action sizes" << " " << action.sizes()[1] << " " << action.sizes()[2] << endl;
