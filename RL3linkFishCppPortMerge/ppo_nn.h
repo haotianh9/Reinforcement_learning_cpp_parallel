@@ -3,8 +3,9 @@
 #include <torch/torch.h>
 #include <iostream>
 #include "eigenmvn.h"
-#include<vector>
-#include<math.h>
+#include <vector>
+#include <math.h>
+#include <time.h>
 
 using namespace std;
 
@@ -259,7 +260,7 @@ struct ActorCritic: torch::nn::Module {
         // cout << "eigen_mean: " << eigen_mean << endl;
         // cout << "eigen_covar: " << eigen_covar << endl;
         
-        Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar);
+        Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true);
 
         auto sampledAction_eigen = normalSolver.samples(1);
         auto sampledAction = eigenToTensor(sampledAction_eigen);
@@ -321,7 +322,7 @@ struct ActorCritic: torch::nn::Module {
             // cout << endl;
             
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(sampleCovar);
-            Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar);
+            Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true);
             // auto squeezedAction = torch::squeeze(action);
             // PRINT_SIZES(squeezedAction.sizes());
             // cout << "Action sizes" << " " << action.sizes()[1] << " " << action.sizes()[2] << endl;
