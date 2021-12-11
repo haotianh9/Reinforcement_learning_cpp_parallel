@@ -323,7 +323,7 @@ struct ActorCritic: torch::nn::Module {
             // cout << "Action sizes" << " " << action.sizes()[1] << " " << action.sizes()[2] << endl;
             auto sampleAction = action.index({sample}).reshape({action.sizes()[1]?action.sizes()[1]:1, action.sizes()[2]?action.sizes()[2]:1});
             auto action_logprob = multivariateLogProb(sampleActionMean, sampleCovar, sampleAction);
-            cout << "Evaluation action_logprob " << action_logprob << endl;
+            // cout << "Evaluation action_logprob " << action_logprob << endl;
             //TODO: make it general
             action_logprobs.index({sample}) = action_logprob.squeeze();
             auto sample_dist_entropy = multivariateEntropy(sampleActionMean.sizes()[0], sampleCovar);
@@ -426,7 +426,7 @@ class PPO {
         auto old_logprobs = torch::squeeze(torch::stack(MemoryNN.logprobs));
         // cout << "Memory actions" << MemoryNN.actions.size() << endl;
         for(int index = 0; index < K_epochs; index++){
-            cout << "begin evaluation !!!!!!!!!" << endl;
+            cout << "BEGIN EVALUATION" << endl;
             auto res = policy.evaluate(old_states, old_actions);
             auto logprobs = std::get<0>(res);
             auto state_values = std::get<1>(res);
