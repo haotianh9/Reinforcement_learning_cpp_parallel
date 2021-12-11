@@ -86,8 +86,7 @@ namespace Eigen {
 			  const bool use_cholesky=false,const uint64_t &seed=std::mt19937::default_seed)
       :_use_cholesky(use_cholesky)
      {
-        // A very bad fix of the bug by HH: comment the line which feed the random seed
-        // randN.seed(seed);
+        randN.seed(seed);
         setMean(mean);
         setCovar(covar);
     }
