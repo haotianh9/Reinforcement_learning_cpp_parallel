@@ -362,11 +362,7 @@ class PPO {
                 << "Discounted reward: " << discounted_rewards << endl;
         torch::Tensor Rewards = torch::cat(discounted_rewards);
         cout << "Merged Rewards: \n" << Rewards << endl;
-        // for(auto r: discounted_rewards) newRewards.push_back(r.item().toDouble());
-        // cout << "newRewards: \n" << newRewards << endl;
-        // auto newRewardsT = torch::tensor(newRewards);
-        // cout << "newRewardsT: \n" << newRewardsT << endl;
-        // auto tensorRewards = torch::tensor(rewards);
+
         // rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
         auto old_states = torch::squeeze(torch::stack(MemoryNN.states));
         auto old_actions = torch::squeeze(torch::stack(MemoryNN.actions));
