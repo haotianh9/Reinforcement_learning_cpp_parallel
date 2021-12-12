@@ -250,9 +250,14 @@ struct ActorCritic: torch::nn::Module {
 
         auto action_mean = actor->forward(state);
         // cout << action_mean.sizes()[0] << " " << action_var.sizes()[0] << endl;
+        // cout << "action_mean size:" << endl;
+        // printSizes(action_mean);
         auto action_var_expanded = action_var.expand_as(action_mean);
+        // cout << "action_var_expanded size:" << endl;
+        // printSizes(action_var_expanded);
         auto cov_mat = torch::diag_embed(action_var_expanded);
-
+        // cout << "cov_mat size:" << endl;
+        // printSizes(cov_mat);
         auto action_logprobs = torch::randn({state.sizes()[0]});
         auto dist_entropy = torch::randn({state.sizes()[0]});
         for(int sample = 0; sample < state.sizes()[0]; sample++){
@@ -378,20 +383,30 @@ class PPO {
             auto state_values = std::get<1>(res);
             auto dist_entropy = std::get<2>(res);
 
-
+            cout << "value: \n" << state_values.requires_grad() << endl;
             cout << "value: \n" << state_values.grad_fn()->name() << endl;
+            
+
+
+            cout << "logprobs: \n" << logprobs.requires_grad() << endl;
             cout << "logprobs: \n" << logprobs.grad_fn()->name() << endl;
-            cout << "dist_entropy: \n" << dist_entropy << endl;
+            
+            cout << "dist_entropy: \n" << dist_entropy.requires_grad() << endl;
+            // cout << "dist_entropy: \n" << dist_entropy << endl;
             // cout << "Log probs sizes" << logprobs.sizes()[0] << " " << old_logprobs.sizes()[0] << endl;
             auto ratios = torch::exp(logprobs - old_logprobs.detach());
             // cout << "ratios: \n" << ratios << endl;
+            cout << "ratios: \n" << ratios.requires_grad() << endl;
             cout << "ratios: \n" << ratios.grad_fn()->name() << endl;
+            
             // # Finding Surrogate Loss:
             
             // cout << "value: \n" << state_values << endl;
             auto advantages = Rewards - state_values.detach();
             // cout << "advantages: \n" << advantages << endl;
+            cout << "advantages: \n" << advantages.requires_grad() << endl;
             cout << "advantages: \n" << advantages.grad_fn()->name() << endl;
+            
             auto surr1 = ratios * advantages;
             auto surr2 = torch::clamp(ratios, 1-eps_clip, 1+eps_clip) * advantages;
 
@@ -400,6 +415,7 @@ class PPO {
 
             // auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
             // cout << "LOSS is: " << loss << endl;
+            cout << "LOSS is: " << loss.requires_grad() << endl;
             cout << "LOSS is: " << loss.grad_fn()->name() << endl;
             // # take gradient step
             optimizer->zero_grad();
