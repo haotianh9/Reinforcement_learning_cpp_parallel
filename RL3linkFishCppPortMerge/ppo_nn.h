@@ -123,7 +123,9 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
 }
 auto multivariateEntropy(int k, torch::Tensor& covar){
     double v1 = pow(2*M_PI*M_E, k);
-    return 0.5 * torch::log(torch::tensor({v1 * torch::det(covar).item().toDouble()}));
+    // HH: I haven't figure out where the problem is, but the calculated value is always half of the correct value, so I removed the 0.5*
+    // Also if the standard deviation is a function of trainable variables in neural network, by doing todouble and tensor will remove it from the gradient chain, which is wrong. But not it's fine
+    return  torch::log(torch::tensor({v1 * torch::det(covar).item().toDouble()}));
 }
 
 // template<typename Scalar>
@@ -375,12 +377,21 @@ class PPO {
             auto logprobs = std::get<0>(res);
             auto state_values = std::get<1>(res);
             auto dist_entropy = std::get<2>(res);
+
+
+            cout << "value: \n" << state_values.grad_fn()->name() << endl;
+            cout << "logprobs: \n" << logprobs.grad_fn()->name() << endl;
+            cout << "dist_entropy: \n" << dist_entropy << endl;
             // cout << "Log probs sizes" << logprobs.sizes()[0] << " " << old_logprobs.sizes()[0] << endl;
             auto ratios = torch::exp(logprobs - old_logprobs.detach());
+            // cout << "ratios: \n" << ratios << endl;
+            cout << "ratios: \n" << ratios.grad_fn()->name() << endl;
             // # Finding Surrogate Loss:
-            cout << "value: \n" << state_values << endl;
+            
+            // cout << "value: \n" << state_values << endl;
             auto advantages = Rewards - state_values.detach();
-            cout << "advantages: \n" << advantages << endl;
+            // cout << "advantages: \n" << advantages << endl;
+            cout << "advantages: \n" << advantages.grad_fn()->name() << endl;
             auto surr1 = ratios * advantages;
             auto surr2 = torch::clamp(ratios, 1-eps_clip, 1+eps_clip) * advantages;
 
@@ -388,7 +399,8 @@ class PPO {
             // cout << "LOSS is: " << loss << endl;
 
             // auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
-            cout << "LOSS is: " << loss << endl;
+            // cout << "LOSS is: " << loss << endl;
+            cout << "LOSS is: " << loss.grad_fn()->name() << endl;
             // # take gradient step
             optimizer->zero_grad();
             loss.mean().backward();
