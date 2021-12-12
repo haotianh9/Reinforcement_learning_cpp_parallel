@@ -309,17 +309,17 @@ class PPO {
         adamOptions.betas(betas);
         this->optimizer = new torch::optim::Adam(this->policy.parameters(), adamOptions);
         
-        this->policy_old = ActorCritic(state_dim, action_dim, action_std);
-        std::stringstream in;
+        // this->policy_old = ActorCritic(state_dim, action_dim, action_std);
+        // std::stringstream in;
         
         // torch::nn::ModuleHolder<torch::nn::Module> policyModuleHolder(std::make_shared<torch::nn::Module>(&this->policy));
         // torch::nn::ModuleHolder<torch::nn::Module> policyOldModuleHolder(std::make_shared<torch::nn::Module>(&this->policy_old));
         
-        auto sharedPtrPolicy = std::make_shared<torch::nn::Module>(this->policy);
-        auto sharedPtrPolicyOld = std::make_shared<torch::nn::Module>(this->policy_old);
-        torch::save(sharedPtrPolicy, in);
-        // outputArchive->save_to(in);
-        torch::load(sharedPtrPolicyOld, in);
+        // auto sharedPtrPolicy = std::make_shared<torch::nn::Module>(this->policy);
+        // auto sharedPtrPolicyOld = std::make_shared<torch::nn::Module>(this->policy_old);
+        // torch::save(sharedPtrPolicy, in);
+        // // outputArchive->save_to(in);
+        // torch::load(sharedPtrPolicyOld, in);
         // this->policy_old.load_state_dict(this->policy.state_dict());
 
         this->MseLoss = torch::nn::MSELoss();
@@ -328,7 +328,8 @@ class PPO {
     auto select_action(torch::Tensor state, MemoryNN& MemoryNN){
         //TODO: check
         state = state.reshape({1, -1});
-        auto [action, logProb] = policy_old.act(state, MemoryNN);
+        // auto [action, logProb] = policy_old.act(state, MemoryNN);
+        auto [action, logProb] = policy.act(state, MemoryNN);
         // cout << "In select action, after act " << MemoryNN.states << endl;
         // PRINT_SIZES(action.sizes()) << endl;
         action = action.cpu().flatten();
@@ -394,12 +395,12 @@ class PPO {
             optimizer->step();
         }
         
-        std::stringstream in;
-        auto sharedPtrPolicy = std::make_shared<torch::nn::Module>(this->policy);
-        auto sharedPtrPolicyOld = std::make_shared<torch::nn::Module>(this->policy_old);
-        torch::save(sharedPtrPolicy, in);
-        // outputArchive->save_to(in);
-        torch::load(sharedPtrPolicyOld, in);
+        // std::stringstream in;
+        // auto sharedPtrPolicy = std::make_shared<torch::nn::Module>(this->policy);
+        // auto sharedPtrPolicyOld = std::make_shared<torch::nn::Module>(this->policy_old);
+        // torch::save(sharedPtrPolicy, in);
+        // // outputArchive->save_to(in);
+        // torch::load(sharedPtrPolicyOld, in);
         
 
          //load_state_dict(self.policy.state_dict()
@@ -413,7 +414,8 @@ class PPO {
     double lr, gamma, eps_clip;
     tuple<double, double> betas;
     int64_t K_epochs;
-    ActorCritic policy, policy_old;
+    // ActorCritic policy, policy_old;
+    ActorCritic policy;
     torch::optim::Adam* optimizer;
     torch::nn::MSELoss MseLoss;
 };
