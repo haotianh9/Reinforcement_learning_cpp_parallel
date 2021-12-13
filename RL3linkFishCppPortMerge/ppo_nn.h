@@ -365,10 +365,9 @@ class PPO {
             discounted_reward = reward + (gamma * discounted_reward);
             discounted_rewards.insert(discounted_rewards.begin(), discounted_reward);
         }
-        cout << "rewards: " << MemoryNNRewards << '\n'
-                << "Discounted reward: " << discounted_rewards << endl;
+        cout << "rewards: " << MemoryNNRewards << endl;
         torch::Tensor Rewards = torch::cat(discounted_rewards);
-        cout << "Merged Rewards: \n" << Rewards << endl;
+        // cout << "Merged Rewards: \n" << Rewards << endl;
 
         // rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
         auto old_states = torch::squeeze(torch::stack(MemoryNN.states));
