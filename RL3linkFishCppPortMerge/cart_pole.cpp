@@ -103,7 +103,7 @@ inline void env_run(int myid)
 }
 
 // inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, float dbufsrt[]){
-inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, std::vector<float> obs_and_more){
+inline void respond_to_env(int envid, MemoryNN& memNN, PPO ppo, bool end, std::vector<float> obs_and_more){
   
   std::vector<float> observation(obs_and_more.begin(), obs_and_more.end() - 2);
   cout << "$$$Observation: " << observation << ' '
@@ -120,24 +120,7 @@ inline void respond_action(int envid, MemoryNN& memNN, PPO ppo, bool end, int& n
        << "to" << ' ' << envid << endl;
   MPI_Send(action.data(), control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
   // cout << "In respond action after send " << memNN.states << endl;
-  float reward = obs_and_more[obs_vars];
-  bool terminate = false;
-  bool done =false;
   
-  // cout << "Reward is: " << reward << endl;
-
-  // TODO: unify the expressions of training state, both here and in memory, using int instead of bool
-  if (std::abs(obs_and_more[obs_vars+1]-TERMINATE) < 1E-3){
-    terminate=true;
-    n_ep++;
-  }
-  if (std::abs(obs_and_more[obs_vars+1]-DONE) < 1E-3){
-    done=true;
-    n_ep++;
-  }
-  if (!std::abs(obs_and_more[obs_vars+1]-START) < 1E-3){
-    memNN.push_reward(reward, terminate, done);
-  }
 }
 
 inline void NN_run(){
@@ -164,7 +147,24 @@ inline void NN_run(){
       MPI_Recv(obs_and_more.data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
       printf("received observations and more from %d \n",i);
       // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
-      respond_action(i,memNN[i-1], ppo, end,n_ep,obs_and_more);
+      respond_to_env(i,memNN[i-1], ppo, end, obs_and_more);
+      float reward = obs_and_more[obs_vars];
+      bool terminate = false;
+      bool done =false;
+      // cout << "Reward is: " << reward << endl;
+
+      // TODO: unify the expressions of training state, both here and in memory, using int instead of bool
+      if (std::abs(obs_and_more[obs_vars+1]-TERMINATE) < 1E-3){
+        terminate=true;
+        n_ep++;
+      }
+      if (std::abs(obs_and_more[obs_vars+1]-DONE) < 1E-3){
+        done=true;
+        n_ep++;
+      }
+      if (!std::abs(obs_and_more[obs_vars+1]-START) < 1E-3){
+        memNN[i-1].push_reward(reward, terminate, done);
+      }
       cout << "##########################################################################################" << endl;
       // cout << "After respond action, the memory is: " << memNN[i-1].states << endl;
       n_timestep++;
@@ -172,10 +172,10 @@ inline void NN_run(){
       if(n_timestep%updateTimestep==0){
         cout << "UPDATING " << n_timestep << endl;
         MemoryNN mergedMemory;
-        for(int proc = 0; proc < nprocs-1; proc++){
-          cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc].states << '\n'
-               << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc].actions << '\n'
-               << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc].rewards << endl;
+        for(int proc = 1; proc < nprocs; proc++){
+          cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc-1].states << '\n'
+               << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc-1].actions << '\n'
+               << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc-1].rewards << endl;
           mergedMemory.merge(memNN[proc]);
           // memNN[proc].clear();
         }
