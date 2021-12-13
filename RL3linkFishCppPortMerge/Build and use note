@@ -29,7 +29,9 @@ module load openmpi/4.0.2
 module load cmake
 export LD_PRELOAD=/spack/apps/gcc/8.3.0/lib64/libstdc++.so.6
 
+build:
 
+cmake -DCMAKE_PREFIX_PATH="/absolute/path/to/libtorch;PATH_TO_EIGEN"  -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++   ..
 
 
 4. running:
