@@ -400,7 +400,9 @@ class PPO {
             cout << "ratios: \n" << ratios.grad_fn()->name() << endl;
             
             // # Finding Surrogate Loss:
-            
+            printSizes(Rewards);
+            printSizes(state_values);
+            cout << "Rewards: " << Rewards << endl;
             // cout << "value: \n" << state_values << endl;
             auto advantages = Rewards - state_values.detach();
             // cout << "advantages: \n" << advantages << endl;
