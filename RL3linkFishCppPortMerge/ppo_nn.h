@@ -343,7 +343,6 @@ class PPO {
         // PRINT_SIZES(action.sizes()) << endl;
         return make_tuple(action, logProb);
     }
-
     auto update(MemoryNN MemoryNN){
         auto MemoryNNRewards = MemoryNN.rewards;
         auto MemoryNNIsTerminals = MemoryNN.is_terminals;
@@ -366,10 +365,9 @@ class PPO {
             discounted_reward = reward + (gamma * discounted_reward);
             discounted_rewards.insert(discounted_rewards.begin(), discounted_reward);
         }
-        cout << "rewards: " << MemoryNNRewards << '\n'
-                << "Discounted reward: " << discounted_rewards << endl;
+        cout << "rewards: " << MemoryNNRewards << endl;
         torch::Tensor Rewards = torch::cat(discounted_rewards);
-        cout << "Merged Rewards: \n" << Rewards << endl;
+        // cout << "Merged Rewards: \n" << Rewards << endl;
 
         // rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
         auto old_states = torch::squeeze(torch::stack(MemoryNN.states));
@@ -400,7 +398,9 @@ class PPO {
             cout << "ratios: \n" << ratios.grad_fn()->name() << endl;
             
             // # Finding Surrogate Loss:
-            
+            printSizes(Rewards);
+            printSizes(state_values);
+            cout << "state_values: " << state_values << endl;
             // cout << "value: \n" << state_values << endl;
             auto advantages = Rewards - state_values.detach();
             // cout << "advantages: \n" << advantages << endl;
@@ -410,13 +410,20 @@ class PPO {
             auto surr1 = ratios * advantages;
             auto surr2 = torch::clamp(ratios, 1-eps_clip, 1+eps_clip) * advantages;
 
-            auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, Rewards) - 0.01*dist_entropy;
-            // cout << "LOSS is: " << loss << endl;
 
+            auto loss1 = -torch::min(surr1, surr2) ;
+            auto loss2 = 0.5*MseLoss->forward(state_values, Rewards); 
+            auto loss3 = - 0.01*dist_entropy;
+            auto loss = loss1+ loss2 + loss3;
+
+
+            cout << "LOSS1 is: " << loss1.mean() << endl;
+            cout << "LOSS2 is: " << loss2.mean() << endl;
+            cout << "LOSS3 is: " << loss3.mean() << endl;
             // auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
             // cout << "LOSS is: " << loss << endl;
-            cout << "LOSS is: " << loss.requires_grad() << endl;
-            cout << "LOSS is: " << loss.grad_fn()->name() << endl;
+            // cout << "LOSS is: " << loss.requires_grad() << endl;
+            // cout << "LOSS is: " << loss.grad_fn()->name() << endl;
             // # take gradient step
             optimizer->zero_grad();
             loss.mean().backward();
