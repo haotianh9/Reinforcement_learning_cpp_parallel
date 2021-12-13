@@ -24,6 +24,7 @@ class MemoryNN {
     vector<bool> is_terminals;
     vector<bool> is_dones;
     auto push_reward(double reward, bool terminate, bool done){
+        cout << "rewards now: " << rewards << endl;
         rewards.push_back(reward);
         is_terminals.push_back(terminate);
         is_dones.push_back(done);
@@ -38,15 +39,25 @@ class MemoryNN {
 void MemoryNN::merge(MemoryNN& r){
     // cout << "Rewards: " << r.states.size() << " " << r.rewards.size() << " " << endl;
     auto rewardsDiff = r.rewards.end() - r.rewards.begin();
+    cout << "begin Merge" << rewardsDiff << endl;
     this->actions.insert(this->actions.end(), r.actions.begin(), r.actions.begin()+rewardsDiff);
+    cout << "begin Merge" << endl;
     r.actions.erase(r.actions.begin(), r.actions.begin()+rewardsDiff);
+    cout << "begin Merge" << endl;
     this->states.insert(this->states.end(), r.states.begin(), r.states.begin() + rewardsDiff);
+    cout << "begin Merge" << endl;
     r.states.erase(r.states.begin(), r.states.begin() + rewardsDiff);
+    cout << "begin Merge" << endl;
     this->logprobs.insert(this->logprobs.end(), r.logprobs.begin(), r.logprobs.begin() + rewardsDiff);
+    cout << "begin Merge" << endl;
     r.logprobs.erase(r.logprobs.begin(), r.logprobs.begin() + rewardsDiff);
+    cout << "begin Merge" << endl;
     this->rewards.insert(this->rewards.end(), r.rewards.begin(), r.rewards.begin() + rewardsDiff);
+    cout << "begin Merge" << endl;
     r.rewards.erase(r.rewards.begin(), r.rewards.begin() + rewardsDiff);
+    cout << "begin Merge" << endl;
     this->is_terminals.insert(this->is_terminals.end(), r.is_terminals.begin(), r.is_terminals.begin() + rewardsDiff);
+    cout << "begin Merge" << endl;
     r.is_terminals.erase(r.is_terminals.begin(), r.is_terminals.begin() + rewardsDiff);
     // cout << "Merge successful" << endl;
 
@@ -367,6 +378,8 @@ class PPO {
         }
         cout << "rewards: " << MemoryNNRewards << endl;
         torch::Tensor Rewards = torch::cat(discounted_rewards);
+        cout << "discounted_rewards: \n" << discounted_rewards[0].requires_grad() << endl;
+        cout << "Rewards: \n" << Rewards.requires_grad() << endl;
         // cout << "Merged Rewards: \n" << Rewards << endl;
 
         // rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
@@ -405,7 +418,7 @@ class PPO {
             auto advantages = Rewards - state_values.detach();
             // cout << "advantages: \n" << advantages << endl;
             cout << "advantages: \n" << advantages.requires_grad() << endl;
-            cout << "advantages: \n" << advantages.grad_fn()->name() << endl;
+            // cout << "advantages: \n" << advantages.grad_fn()->name() << endl;
             
             auto surr1 = ratios * advantages;
             auto surr2 = torch::clamp(ratios, 1-eps_clip, 1+eps_clip) * advantages;

@@ -147,7 +147,7 @@ inline void NN_run(){
       MPI_Recv(obs_and_more.data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
       printf("received observations and more from %d \n",i);
       // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
-      respond_to_env(i,memNN[i-1], ppo, end, obs_and_more);
+
       float reward = obs_and_more[obs_vars];
       bool terminate = false;
       bool done =false;
@@ -155,33 +155,40 @@ inline void NN_run(){
 
       // TODO: unify the expressions of training state, both here and in memory, using int instead of bool
       if (std::abs(obs_and_more[obs_vars+1]-TERMINATE) < 1E-3){
+        cout << "terminated............................" <<endl;
         terminate=true;
         n_ep++;
       }
-      if (std::abs(obs_and_more[obs_vars+1]-DONE) < 1E-3){
+      else if (std::abs(obs_and_more[obs_vars+1]-DONE) < 1E-3){
+        cout << "done............................" <<endl;
         done=true;
         n_ep++;
       }
+      else respond_to_env(i,memNN[i-1], ppo, end, obs_and_more);
       if (!std::abs(obs_and_more[obs_vars+1]-START) < 1E-3){
+        cout << "PUSHPUSHPUSH!!!" <<endl;
         memNN[i-1].push_reward(reward, terminate, done);
+        n_timestep++;
+        cout << "Timestep " << n_timestep << endl;
+        if(n_timestep%updateTimestep==0){
+          cout << "UPDATING " << n_timestep << endl;
+          MemoryNN mergedMemory;
+          for(int proc = 1; proc < nprocs; proc++){
+            cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc-1].states << '\n'
+                << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc-1].actions << '\n'
+                << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc-1].rewards << endl;
+            mergedMemory.merge(memNN[proc-1]);
+            // memNN[proc-1].clear();
+          }
+          ppo.update(mergedMemory);
+          n_timestep = 0;
+        }
       }
+      else cout  << "What the hell???????" << obs_and_more[obs_vars+1] << endl;
       cout << "##########################################################################################" << endl;
       // cout << "After respond action, the memory is: " << memNN[i-1].states << endl;
-      n_timestep++;
-      cout << "Timestep " << n_timestep << endl;
-      if(n_timestep%updateTimestep==0){
-        cout << "UPDATING " << n_timestep << endl;
-        MemoryNN mergedMemory;
-        for(int proc = 1; proc < nprocs; proc++){
-          cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc-1].states << '\n'
-               << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc-1].actions << '\n'
-               << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc-1].rewards << endl;
-          mergedMemory.merge(memNN[proc]);
-          // memNN[proc].clear();
-        }
-        ppo.update(mergedMemory);
-        n_timestep = 0;
-      }  
+
+      
       
     }
     printf("total: Nepisodes: %d ; Ntimestep: %d \n" ,n_ep, n_timestep);
