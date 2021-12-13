@@ -335,7 +335,6 @@ class PPO {
         // PRINT_SIZES(action.sizes()) << endl;
         return make_tuple(action, logProb);
     }
-
     auto update(MemoryNN MemoryNN){
         auto MemoryNNRewards = MemoryNN.rewards;
         auto MemoryNNIsTerminals = MemoryNN.is_terminals;
