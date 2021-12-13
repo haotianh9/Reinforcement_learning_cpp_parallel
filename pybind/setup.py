@@ -46,6 +46,7 @@ class CMakeBuild(build_ext):
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
+            f"-DCMAKE_PREFIX_PATH=./libtorch;./eigen_build",
         ]
         build_args = []
         # Adding CMake arguments set as environment variable
@@ -120,13 +121,13 @@ class CMakeBuild(build_ext):
 # The information here can also be placed in setup.cfg - better separation of
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
-    name="cmake_example",
+    name="ppo_fish",
     version="0.0.1",
-    author="Dean Moldovan",
-    author_email="dean0x7d@gmail.com",
+    author="",
+    author_email="",
     description="A test project using pybind11 and CMake",
     long_description="",
-    ext_modules=[CMakeExtension("cmake_example")],
+    ext_modules=[CMakeExtension("ppo_fish")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
     extras_require={"test": ["pytest>=6.0"]},
