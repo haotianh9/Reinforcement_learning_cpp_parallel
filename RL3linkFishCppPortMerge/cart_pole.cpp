@@ -159,7 +159,6 @@ inline void NN_run(){
         done=true;
         n_ep++;
       }
-      else respond_to_env(i,memNN[i-1], ppo, end, obs_and_more);
       if (!std::abs(obs_and_more[obs_vars+1]-START) < 1E-3){
         cout << "PUSHPUSHPUSH!!!" <<endl;
         memNN[i-1].push_reward(reward, terminate, done);
@@ -182,7 +181,7 @@ inline void NN_run(){
       cout << "##########################################################################################" << endl;
       // cout << "After respond action, the memory is: " << memNN[i-1].states << endl;
 
-      
+      if (!terminate & !done)respond_to_env(i,memNN[i-1], ppo, end, obs_and_more);
       
     }
     printf("total: Nepisodes: %d ; Ntimestep: %d \n" ,n_ep, n_timestep);
