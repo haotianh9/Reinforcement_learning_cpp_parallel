@@ -9,7 +9,7 @@
 #include <random>
 using namespace std;
 
-
+enum TRAIN_STATUS {NORMAL = 0, TERMINATE, TIMEUP, START};
 std::random_device rd_NN;
 std::mt19937_64 eng_NN(rd_NN());
 std::uniform_int_distribution<unsigned long> distr_NN;
@@ -22,18 +22,15 @@ class MemoryNN {
     vector<torch::Tensor> actions, states, logprobs;
     vector<double> rewards;
     vector<bool> is_terminals;
-    vector<bool> is_dones;
-    auto push_reward(double reward, bool terminate, bool done){
+    vector<bool> is_timeups;
+    auto push_reward(double reward, bool terminate, bool timeup){
         cout << "rewards now: " << rewards << endl;
         rewards.push_back(reward);
         is_terminals.push_back(terminate);
-        is_dones.push_back(done);
+        is_timeups.push_back(timeup);
     }
     void merge(MemoryNN& r);
     void clear();
-
-    //TODO: handle done
-
 };
 
 void MemoryNN::merge(MemoryNN& r){
@@ -47,7 +44,7 @@ void MemoryNN::merge(MemoryNN& r){
     this->logprobs.insert(this->logprobs.end(), r.logprobs.begin(), r.logprobs.end());
     this->rewards.insert(this->rewards.end(), r.rewards.begin(), r.rewards.end());
     this->is_terminals.insert(this->is_terminals.end(), r.is_terminals.begin(), r.is_terminals.end());
-    this->is_dones.insert(this->is_dones.end(), r.is_dones.begin(), r.is_dones.end());
+    this->is_timeups.insert(this->is_timeups.end(), r.is_timeups.begin(), r.is_timeups.end());
     cout << "Merge successful" << endl;
 }
 
@@ -57,7 +54,7 @@ void MemoryNN::clear(){
     this->logprobs.clear();
     this->rewards.clear();
     this->is_terminals.clear();
-    this->is_dones.clear();
+    this->is_timeups.clear();
 }
 
 template<typename Scalar>
@@ -175,13 +172,8 @@ struct ActorCritic: torch::nn::Module {
         
         torch::Tensor cov_mat = torch::diag(action_var);
 
-
-    
-
         torch::Tensor action = torch::normal(0, action_std, {action_mean.size(0)});
         cout << "COME ON!!!" << action_std << action << endl;
-        
-        
 
         // TODO: transform to real
 
@@ -205,16 +197,18 @@ struct ActorCritic: torch::nn::Module {
         
         auto cov_mat = torch::diag_embed(action_var_expanded);
         
+        // cout << "%%%%%%%%%%%%%%%BUNCH OF STUFFS" << '\n' 
+        //     << action_mean << action_var_expanded << cov_mat << endl;
         auto action_logprobs = torch::randn({state.sizes()[0]});
         auto dist_entropy = torch::randn({state.sizes()[0]});
         for(int sample = 0; sample < state.sizes()[0]; sample++){
             auto sampleActionMean = action_mean.index({sample}).reshape({action_mean.sizes()[1], action.sizes()[2]?action.sizes()[2]:1});;
 
-            Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToVector(sampleActionMean);
+            // Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToVector(sampleActionMean);
             auto sampleCovar = cov_mat.index({sample});
             
-            Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(sampleCovar);
-            Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true,distr_NN(eng_NN));
+            // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(sampleCovar);
+            // Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true,distr_NN(eng_NN));
             // auto squeezedAction = torch::squeeze(action);
             // PRINT_SIZES(squeezedAction.sizes());
             // cout << "Action sizes" << " " << action.sizes()[1] << " " << action.sizes()[2] << endl;
@@ -275,31 +269,29 @@ class PPO {
     auto update(MemoryNN MemoryNN){
         auto MemoryNNRewards = MemoryNN.rewards;
         auto MemoryNNIsTerminals = MemoryNN.is_terminals;
-        auto MemoryNNIsDones = MemoryNN.is_dones;
+        auto MemoryNNIsTimeups = MemoryNN.is_timeups;
         auto MemoryNNStates = MemoryNN.states;
         std::reverse(MemoryNNRewards.begin(), MemoryNNRewards.end());
         std::reverse(MemoryNNIsTerminals.begin(), MemoryNNIsTerminals.end());
-        std::reverse(MemoryNNIsDones.begin(), MemoryNNIsDones.end());
+        std::reverse(MemoryNNIsTimeups.begin(), MemoryNNIsTimeups.end());
         std::reverse(MemoryNNStates.begin(), MemoryNNStates.end());
         torch::Tensor discounted_reward = torch::tensor({0.0});
         vector<torch::Tensor> discounted_rewards;
 
-        cout << "MemoryNNIsDones: " << MemoryNNIsDones << endl;
+        cout << "MemoryNNIsTimeups: " << MemoryNNIsTimeups << endl;
         
         
         for(int index = 0; index < MemoryNNRewards.size(); index++){
             auto reward = MemoryNNRewards[index];
             auto is_terminal = MemoryNNIsTerminals[index];
-            auto is_done = MemoryNNIsDones[index];
+            auto is_timeup = MemoryNNIsTimeups[index];
             auto MemoryNNState = MemoryNNStates[index];
             
-            if( is_done ){
+            if (is_timeup){
                 auto value = policy.critic->forward(MemoryNNState.squeeze());
                 discounted_reward = value;
             }
-            else if(is_terminal ){
-               discounted_reward = torch::tensor({0.0});
-            }
+            else if (is_terminal) discounted_reward = torch::tensor({0.0});            }
             discounted_reward = reward + (gamma * discounted_reward);
             discounted_rewards.insert(discounted_rewards.begin(), discounted_reward);
         }

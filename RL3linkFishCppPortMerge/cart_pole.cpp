@@ -83,7 +83,7 @@ inline void env_run(int myid)
         printf("myid: %d episode: %d TERMINATED!! \n", myid,i); 
         break;
       }else if (j == (N_timestep-1)){
-        obs.push_back(DONE);
+        obs.push_back(TIMEUP);
         MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }else{
         obs.push_back(NORMAL);
@@ -126,17 +126,18 @@ inline void NN_run(){
   bool end = false;
   // MPI_Request reqs[nprocs-1];
   
-  auto action_std = 0.1;            // constant std for action distribution (Multivariate Normal)
+  auto action_std = 0.5;            // constant std for action distribution (Multivariate Normal)
   auto K_epochs = 80;            // update policy for K epochs
   auto eps_clip = 0.2;            // clip parameter for PPO
   auto gamma = 0.99;            // discount factor
   
   auto lr = 0.0003;                 // parameters for Adam optimizer
   auto betas = make_tuple(0.9, 0.999);
+
   PPO ppo = PPO(obs_vars, control_vars, action_std, lr, betas, gamma, K_epochs, eps_clip);
   
   MemoryNN memNN[nprocs-1];
-  
+  TRAIN_STATUS env_status;
   
   std::vector<float> obs_and_more(obs_vars+2);
   while(true){
@@ -146,25 +147,18 @@ inline void NN_run(){
     
 
       float reward = obs_and_more[obs_vars];
-      bool terminate = false;
-      bool done =false;
+      env_status = static_cast<TRAIN_STATUS>(int(obs_and_more[obs_vars+1]+1E-3));
       // TODO: unify the expressions of training state, both here and in memory, using int instead of bool
-      if (std::abs(obs_and_more[obs_vars+1]-TERMINATE) < 1E-3){
-        cout << "terminated............................" <<endl;
-        terminate=true;
-        n_ep++;
-      }
-      else if (std::abs(obs_and_more[obs_vars+1]-DONE) < 1E-3){
-        cout << "done............................" <<endl;
-        done=true;
-        n_ep++;
-      }
-      if (!std::abs(obs_and_more[obs_vars+1]-START) < 1E-3){
+      if (env_status != START){
         cout << "PUSHPUSHPUSH!!!" <<endl;
-        memNN[i-1].push_reward(reward, terminate, done);
+        memNN[i-1].push_reward(reward, (env_status == TERMINATE), (env_status == TIMEUP));
         n_timestep++;
         cout << "Timestep " << n_timestep << endl;
-        if(n_timestep%updateTimestep==0){
+      }
+      if (env_status == TERMINATE || env_status == TIMEUP)
+      {
+        n_ep++;
+        if(n_timestep >= updateTimestep){
           cout << "UPDATING " << n_timestep << endl;
           MemoryNN mergedMemory;
           for(int proc = 1; proc < nprocs; proc++){
@@ -178,10 +172,13 @@ inline void NN_run(){
           n_timestep = 0;
         }
       }
+      else respond_to_env(i,memNN[i-1], ppo, end, obs_and_more);
+
+      
       cout << "##########################################################################################" << endl;
       // cout << "After respond action, the memory is: " << memNN[i-1].states << endl;
 
-      if (!terminate & !done)respond_to_env(i,memNN[i-1], ppo, end, obs_and_more);
+      
       
     }
     printf("total: Nepisodes: %d ; Ntimestep: %d \n" ,n_ep, n_timestep);
@@ -222,12 +219,12 @@ int main(int argc, char**argv)
 {
   int myid;
   int n;
-  myfile.open ("./log.txt");
+  
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  
+  myfile.open ("./proc" + std::to_string(nprocs)+"_log.txt");
   if (myid == 0) {
     printf("There are %d processes running in this MPI program\n", nprocs);
     NN_run();
