@@ -72,7 +72,7 @@ inline void env_run(int myid)
       bool terminate = env.advance(action_double); //advance the simulation:
       obs_raw = env.getobs();
       double reward = env.getReward();
-      episode_reward+=reward;
+      episode_reward += reward;
       // cout << terminate << endl;
       // send new observation, reward, and whether terminate or not, if terminate send 1, if not send 0
       // for (int i=0;i<obs_vars;i++) dbufsrt[i]=obs[i];
