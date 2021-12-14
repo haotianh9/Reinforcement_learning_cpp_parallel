@@ -361,7 +361,7 @@ class PPO {
             cout << "LOSS is: " << loss.grad_fn()->name() << endl;
             // # take gradient step
             optimizer->zero_grad();
-            loss.mean().backward();
+            // loss.mean().backward(1);
             optimizer->step();
             cout << "finish " << index <<" epoch" << endl; 
         }

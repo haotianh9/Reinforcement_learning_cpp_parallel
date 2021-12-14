@@ -179,7 +179,6 @@ inline void NN_run(){
           n_timestep = 0;
         }
       }
-      else cout  << "What the hell???????" << obs_and_more[obs_vars+1] << endl;
       cout << "##########################################################################################" << endl;
       // cout << "After respond action, the memory is: " << memNN[i-1].states << endl;
 
