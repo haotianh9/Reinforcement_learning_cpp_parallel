@@ -86,7 +86,8 @@ public:
 		#else
 	    std::uniform_real_distribution<double> dist(-0.05,0.05);
 		#endif
-		u = Vec4(dist(gen), dist(gen), dist(gen), dist(gen));
+		// u = Vec4(dist(gen), dist(gen), dist(gen), dist(gen));
+    u = Vec4(0.0,0.0,0.0,0.0);
     step = 0;
 		F = 0;
     t = 0;
