@@ -22,7 +22,7 @@ const int obs_vars = 6; // x, vel, angvel, angle, cosine, sine
 
 
 const int Nepisodes=90000;
-const int N_timestep=5;//Maximum time step in one episode
+const int N_timestep=100;//Maximum time step in one episode
 const int Max_timestep=9000000;//Maximum training timestep (either define this or define Nepisodes)
-const int updateTimestep = 20;
+const int updateTimestep = 1900;
 std::ofstream myfile;

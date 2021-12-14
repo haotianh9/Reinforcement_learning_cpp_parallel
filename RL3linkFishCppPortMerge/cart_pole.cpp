@@ -127,7 +127,7 @@ inline void NN_run(){
   // MPI_Request reqs[nprocs-1];
   
   auto action_std = 0.1;            // constant std for action distribution (Multivariate Normal)
-  auto K_epochs = 2;            // update policy for K epochs
+  auto K_epochs = 80;            // update policy for K epochs
   auto eps_clip = 0.2;            // clip parameter for PPO
   auto gamma = 0.99;            // discount factor
   
