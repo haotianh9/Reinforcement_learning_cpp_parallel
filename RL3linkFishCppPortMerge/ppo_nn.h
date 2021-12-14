@@ -382,6 +382,7 @@ class PPO {
         auto old_logprobs = torch::squeeze(torch::stack(MemoryNN.logprobs)).detach();
         // cout << "Memory actions" << MemoryNN.actions.size() << endl;
         for(int index = 0; index < K_epochs; index++){
+            
             cout << "BEGIN EVALUATION" << endl;
             auto res = policy.evaluate(old_states, old_actions);
             auto logprobs = std::get<0>(res);
@@ -407,6 +408,8 @@ class PPO {
             // # Finding Surrogate Loss:
             printSizes(Rewards);
             printSizes(state_values);
+
+            Rewards=Rewards.detach();
             cout << "state_values: " << state_values << endl;
             // cout << "value: \n" << state_values << endl;
             auto advantages = Rewards - state_values.detach();
@@ -435,6 +438,7 @@ class PPO {
             optimizer->zero_grad();
             loss.mean().backward();
             optimizer->step();
+
             cout << "finish " << index <<" epoch" << endl; 
         }
         
