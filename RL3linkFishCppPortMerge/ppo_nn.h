@@ -382,7 +382,8 @@ class PPO {
                 // cout << "state to critic" << MemoryNNState.squeeze() << endl;;
                 auto value = policy.critic->forward(MemoryNNState.squeeze());
                 discounted_reward = value;
-            }elif(is_terminal ){
+            }
+            else if(is_terminal ){
                torch::Tensor discounted_reward = torch::tensor({0.0});
             }
             discounted_reward = reward + (gamma * discounted_reward);
