@@ -10,7 +10,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 find_package (Eigen3 REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
-add_executable(example-app memory.cpp cart_pole.cpp)
+add_executable(example-app cart_pole.cpp)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 message("${CMAKE_MODULE_PATH}")

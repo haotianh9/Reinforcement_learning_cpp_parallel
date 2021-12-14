@@ -11,7 +11,6 @@
 
 #include "cart_pole.h"
 #include "cart_MPI.h"
-#include "Memory.h"
 #include <iostream>
 #include <fstream>
 #include <cstdio>
