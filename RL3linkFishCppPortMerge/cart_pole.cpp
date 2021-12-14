@@ -112,13 +112,11 @@ inline void respond_to_env(int envid, MemoryNN& memNN, PPO ppo, bool end, std::v
   cout << "Direct action and logprob: " << action << ' ' << logprobs << endl;
   // TODO generalize learner and memory (class learner as the base class for ppo etc.)
   // ppo.update_memory()
-  // cout << "In respond action before send " << memNN.states << endl;
   if (end) action[0]=INVALIDACTION;
   
   cout << "sending action " << action << ' '
        << "to" << ' ' << envid << endl;
   MPI_Send(action.data(), control_vars, MPI_FLOAT, envid, envid+nprocs*2, MPI_COMM_WORLD); // send action
-  // cout << "In respond action after send " << memNN.states << endl;
   
 }
 
@@ -145,13 +143,11 @@ inline void NN_run(){
     for (int i = 1; i <= nprocs-1; i++){
       MPI_Recv(obs_and_more.data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
       printf("received observations and more from %d \n",i);
-      // respond_action(i,mem[i-1],memNN[i-1], ppo, end,n_ep,dbufsrt);
+    
 
       float reward = obs_and_more[obs_vars];
       bool terminate = false;
       bool done =false;
-      // cout << "Reward is: " << reward << endl;
-
       // TODO: unify the expressions of training state, both here and in memory, using int instead of bool
       if (std::abs(obs_and_more[obs_vars+1]-TERMINATE) < 1E-3){
         cout << "terminated............................" <<endl;

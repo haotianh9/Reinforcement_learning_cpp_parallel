@@ -79,15 +79,9 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
     // cout << "Action mean is: " << action_mean << endl;
     // cout << "covar is: " << covar << endl;
     auto diff = action - action_mean;
-    // cout << "Diff sizes " << diff << endl;
-    
-    // cout << "diff " << diff << endl;
+  
     auto covarInverse = covar.inverse();
-    // cout << "Multivariate log prob" << endl;
-    // printSizes(action_mean);
-    // printSizes(covar);
-    // printSizes(diff);    
-
+  
     auto numerator = -0.5 * (diff.transpose(0, 1).matmul(covarInverse.matmul( diff)));
     numerator = torch::exp(numerator);
     // cout << "numerator " << numerator << endl;
@@ -96,21 +90,7 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
     // cout << "denominator " << denominator << endl;
     numerator = numerator / denominator;
     numerator =torch::log(numerator);
-    // cout << action_mean.sizes() << endl;
-    // cout << action_mean.sizes()[0] << endl;
-    // cout << typeid(action_mean.sizes()[0]).name() << endl;
-
-
-    // TODO: rewrite the formular to save computational power
-
-    // auto numerator = -0.5 * (diff.transpose(0, 1).matmul(covarInverse.matmul( diff)));
-    // // numerator = torch::exp(numerator);
-    // cout << "numerator " << numerator << endl;
-    // cout << action_mean.sizes() << endl;
-    // auto denominator = torch::log(torch::Tensor(2 * (float)M_PI) )* (float)action_mean.sizes()[0] + torch::log(torch::det(covar));
-    // denominator = denominator / 2;
-    // cout << "denominator " << denominator << endl;
-    // numerator = numerator - denominator;
+  
 
     return numerator;
 
@@ -171,24 +151,7 @@ struct ActorCritic: torch::nn::Module {
             {"tanh2", torch::nn::Tanh(),},
             {"linear3", torch::nn::Linear(32, 1),},            
         }))){
-        // actor = register_module("actor", torch::nn::Sequential({
-        //     //TODO: make it state_dim
-        //     {"linear1", torch::nn::Linear(state_dim, 64)},
-        //     {"tanh1", torch::nn::Tanh(),},
-        //     {"linear2", torch::nn::Linear(64, 32),},
-        //     {"tanh2", torch::nn::Tanh(),},
-        //     {"linear3", torch::nn::Linear(32, action_dim),},
-        //     {"tanh3", torch::nn::Tanh()}
-        // }));
-
-        // critic = register_module("critic", torch::nn::Sequential({
-        //     //TODO: make it state_dim
-        //     {"linear1", torch::nn::Linear(state_dim, 64)},
-        //     {"tanh1", torch::nn::Tanh(),},
-        //     {"linear2", torch::nn::Linear(64, 32),},
-        //     {"tanh2", torch::nn::Tanh(),},
-        //     {"linear3", torch::nn::Linear(32, 1),},            
-        // }));
+    
         int64_t dims[] = {action_dim};
         action_var = register_parameter(
             "action_var",
@@ -208,22 +171,12 @@ struct ActorCritic: torch::nn::Module {
         torch::Tensor cov_mat = torch::diag(action_var);
 
 
-        // Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToMatrix(action_mean);
-        // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(cov_mat);
+    
 
-        // cout << "eigen_mean: " << eigen_mean << endl;
-        // cout << "eigen_covar: " << eigen_covar << endl;
-        
-        // Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true,distr_NN(eng_NN));
-
-        // auto sampledAction_eigen = normalSolver.samples(1);
-        // auto sampledAction = eigenToTensor(sampledAction_eigen);
-        // cout << "sampled action" << sampledAction << endl;
-        // cout << "sampled action_eigen" << sampledAction_eigen << endl;
         torch::Tensor action = torch::normal(0, action_std, {action_mean.size(0)});
         cout << "COME ON!!!" << action_std << action << endl;
-        // auto sampledActionLogProb = multivariateLogProb(action_mean, cov_mat, sampledAction);
-        // auto dist = torch::MultivariateNormal(action_mean, cov_mat);
+        
+        
 
         // TODO: transform to real
 
@@ -242,15 +195,11 @@ struct ActorCritic: torch::nn::Module {
         // cout << "EVALUATE ";
 
         auto action_mean = actor->forward(state);
-        // cout << action_mean.sizes()[0] << " " << action_var.sizes()[0] << endl;
-        // cout << "action_mean size:" << endl;
-        // printSizes(action_mean);
+        
         auto action_var_expanded = action_var.expand_as(action_mean);
-        // cout << "action_var_expanded size:" << endl;
-        // printSizes(action_var_expanded);
+        
         auto cov_mat = torch::diag_embed(action_var_expanded);
-        // cout << "cov_mat size:" << endl;
-        // printSizes(cov_mat);
+        
         auto action_logprobs = torch::randn({state.sizes()[0]});
         auto dist_entropy = torch::randn({state.sizes()[0]});
         for(int sample = 0; sample < state.sizes()[0]; sample++){
@@ -258,10 +207,6 @@ struct ActorCritic: torch::nn::Module {
 
             Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToVector(sampleActionMean);
             auto sampleCovar = cov_mat.index({sample});
-            // for(auto s: sampleCovar.sizes()){
-            //     cout << s << " ";
-            // }
-            // cout << endl;
             
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(sampleCovar);
             Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true,distr_NN(eng_NN));
@@ -308,19 +253,7 @@ class PPO {
         // adamOptions.betas()
         adamOptions.betas(betas);
         this->optimizer = new torch::optim::Adam(this->policy.parameters(), adamOptions);
-        
-        // this->policy_old = ActorCritic(state_dim, action_dim, action_std);
-        // std::stringstream in;
-        
-        // torch::nn::ModuleHolder<torch::nn::Module> policyModuleHolder(std::make_shared<torch::nn::Module>(&this->policy));
-        // torch::nn::ModuleHolder<torch::nn::Module> policyOldModuleHolder(std::make_shared<torch::nn::Module>(&this->policy_old));
-        
-        // auto sharedPtrPolicy = std::make_shared<torch::nn::Module>(this->policy);
-        // auto sharedPtrPolicyOld = std::make_shared<torch::nn::Module>(this->policy_old);
-        // torch::save(sharedPtrPolicy, in);
-        // // outputArchive->save_to(in);
-        // torch::load(sharedPtrPolicyOld, in);
-        // this->policy_old.load_state_dict(this->policy.state_dict());
+
 
         this->MseLoss = torch::nn::MSELoss();
     }
@@ -328,12 +261,10 @@ class PPO {
     auto select_action(torch::Tensor state, MemoryNN& MemoryNN){
         //TODO: check
         state = state.reshape({1, -1});
-        // auto [action, logProb] = policy_old.act(state, MemoryNN);
         auto [action, logProb] = policy.act(state, MemoryNN);
-        // cout << "In select action, after act " << MemoryNN.states << endl;
-        // PRINT_SIZES(action.sizes()) << endl;
+        
         action = action.cpu().flatten();
-        // PRINT_SIZES(action.sizes()) << endl;
+        
         return make_tuple(action, logProb);
     }
     auto update(MemoryNN MemoryNN){
@@ -350,14 +281,14 @@ class PPO {
 
         cout << "MemoryNNIsDones: " << MemoryNNIsDones << endl;
         
-        // cout << MemoryNNRewards.size() << " " << MemoryNNIsTerminals.size() << " " << MemoryNNStates.size() << endl;
+        
         for(int index = 0; index < MemoryNNRewards.size(); index++){
             auto reward = MemoryNNRewards[index];
             auto is_terminal = MemoryNNIsTerminals[index];
             auto is_done = MemoryNNIsDones[index];
             auto MemoryNNState = MemoryNNStates[index];
             if( is_done ){
-                // cout << "state to critic" << MemoryNNState.squeeze() << endl;;
+                
                 auto value = policy.critic->forward(MemoryNNState.squeeze());
                 discounted_reward = value;
             }
@@ -369,15 +300,15 @@ class PPO {
         }
         cout << "rewards: " << MemoryNNRewards << endl;
         torch::Tensor Rewards = torch::cat(discounted_rewards);
-        // cout << "discounted_rewards: \n" << discounted_rewards[0].requires_grad() << endl;
-        // cout << "Rewards: \n" << Rewards.requires_grad() << endl;
+        
+        cout << "Rewards: \n" << Rewards.requires_grad() << endl;
         cout << "Merged Rewards: \n" << Rewards << endl;
 
         // rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
-        auto old_states = torch::squeeze(torch::stack(MemoryNN.states));
-        auto old_actions = torch::squeeze(torch::stack(MemoryNN.actions));
-        auto old_logprobs = torch::squeeze(torch::stack(MemoryNN.logprobs));
-        // cout << "Memory actions" << MemoryNN.actions.size() << endl;
+        auto old_states = torch::squeeze(torch::stack(MemoryNN.states)).detach();
+        auto old_actions = torch::squeeze(torch::stack(MemoryNN.actions)).detach();
+        auto old_logprobs = torch::squeeze(torch::stack(MemoryNN.logprobs)).detach();
+        
         for(int index = 0; index < K_epochs; index++){
             cout << "BEGIN EVALUATION" << endl;
             auto res = policy.evaluate(old_states, old_actions);
@@ -424,31 +355,17 @@ class PPO {
             cout << "LOSS1 is: " << loss1.mean() << endl;
             cout << "LOSS2 is: " << loss2.mean() << endl;
             cout << "LOSS3 is: " << loss3.mean() << endl;
-            // auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
+            // auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, Rewards) - 0.01*dist_entropy;
             cout << "LOSS is: " << loss.mean() << endl;
-            // cout << "LOSS is: " << loss.requires_grad() << endl;
-            // cout << "LOSS is: " << loss.grad_fn()->name() << endl;
+            cout << "LOSS is: " << loss.requires_grad() << endl;
+            cout << "LOSS is: " << loss.grad_fn()->name() << endl;
             // # take gradient step
             optimizer->zero_grad();
             loss.mean().backward();
             optimizer->step();
-            cout << "finish one epoch" << endl; 
+            cout << "finish " << index <<" epoch" << endl; 
         }
         
-        // std::stringstream in;
-        // auto sharedPtrPolicy = std::make_shared<torch::nn::Module>(this->policy);
-        // auto sharedPtrPolicyOld = std::make_shared<torch::nn::Module>(this->policy_old);
-        // torch::save(sharedPtrPolicy, in);
-        // // outputArchive->save_to(in);
-        // torch::load(sharedPtrPolicyOld, in);
-        
-
-         //load_state_dict(self.policy.state_dict()
-        
-
-            
-        // # Copy new weights into old policy:
-        // self.policy_old.load_state_dict(self.policy.state_dict())
     }
 
     double lr, gamma, eps_clip;
@@ -470,15 +387,13 @@ tuple<vector<float>, float> getAction(vector<float> observation,  int dim, PPO p
                 // << observation.data() << '\n' << observationTensor << endl;
     auto [actionTensor, logProbTensor] = ppo.select_action(observationTensor, memoryNN);
     actionTensor = actionTensor.contiguous();
-    // action[0]=observation[0]+observation[1];
-    // float logprob;
-    // logprob=0.2;
-    // PRINT_SIZES(actionTensor.sizes());
+
+
     vector<float> actionVec(actionTensor.data_ptr<float>(), actionTensor.data_ptr<float>() + actionTensor.numel());
 
 
     auto logProb = logProbTensor.item<float>();
-    // cout << "In get action, before return" << memoryNN.states << endl;
+
     return {actionVec, logProb};
 }
 #endif
