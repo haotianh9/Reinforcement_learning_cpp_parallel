@@ -291,7 +291,7 @@ class PPO {
                 auto value = policy.critic->forward(MemoryNNState.squeeze());
                 discounted_reward = value;
             }
-            else if (is_terminal) discounted_reward = torch::tensor({0.0});            }
+            else if (is_terminal) discounted_reward = torch::tensor({0.0});            
             discounted_reward = reward + (gamma * discounted_reward);
             discounted_rewards.insert(discounted_rewards.begin(), discounted_reward);
         }
