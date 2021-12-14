@@ -392,13 +392,13 @@ class PPO {
         cout << "rewards: " << MemoryNNRewards << endl;
         torch::Tensor Rewards = torch::cat(discounted_rewards);
         // cout << "discounted_rewards: \n" << discounted_rewards[0].requires_grad() << endl;
-        // cout << "Rewards: \n" << Rewards.requires_grad() << endl;
+        cout << "Rewards: \n" << Rewards.requires_grad() << endl;
         cout << "Merged Rewards: \n" << Rewards << endl;
 
         // rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
-        auto old_states = torch::squeeze(torch::stack(MemoryNN.states));
-        auto old_actions = torch::squeeze(torch::stack(MemoryNN.actions));
-        auto old_logprobs = torch::squeeze(torch::stack(MemoryNN.logprobs));
+        auto old_states = torch::squeeze(torch::stack(MemoryNN.states)).detach();
+        auto old_actions = torch::squeeze(torch::stack(MemoryNN.actions)).detach();
+        auto old_logprobs = torch::squeeze(torch::stack(MemoryNN.logprobs)).detach();
         // cout << "Memory actions" << MemoryNN.actions.size() << endl;
         for(int index = 0; index < K_epochs; index++){
             cout << "BEGIN EVALUATION" << endl;
@@ -446,15 +446,15 @@ class PPO {
             cout << "LOSS1 is: " << loss1.mean() << endl;
             cout << "LOSS2 is: " << loss2.mean() << endl;
             cout << "LOSS3 is: " << loss3.mean() << endl;
-            // auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
+            // auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, Rewards) - 0.01*dist_entropy;
             cout << "LOSS is: " << loss.mean() << endl;
-            // cout << "LOSS is: " << loss.requires_grad() << endl;
-            // cout << "LOSS is: " << loss.grad_fn()->name() << endl;
+            cout << "LOSS is: " << loss.requires_grad() << endl;
+            cout << "LOSS is: " << loss.grad_fn()->name() << endl;
             // # take gradient step
             optimizer->zero_grad();
             loss.mean().backward();
             optimizer->step();
-            cout << "finish one epoch" << endl; 
+            cout << "finish " << index <<" epoch" << endl; 
         }
         
         // std::stringstream in;
