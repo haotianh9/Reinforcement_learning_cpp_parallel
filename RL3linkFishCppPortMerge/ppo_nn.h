@@ -37,6 +37,11 @@ class MemoryNN {
 };
 
 void MemoryNN::merge(MemoryNN& r){
+
+    cout << "States size: " << r.states.size() << " Rewards size: " << r.rewards.size() << " " << endl;
+
+
+
     this->actions.insert(this->actions.end(), r.actions.begin(), r.actions.end());
     this->states.insert(this->states.end(), r.states.begin(), r.states.end());
     this->logprobs.insert(this->logprobs.end(), r.logprobs.begin(), r.logprobs.end());
@@ -287,20 +292,20 @@ class PPO {
             auto is_terminal = MemoryNNIsTerminals[index];
             auto is_done = MemoryNNIsDones[index];
             auto MemoryNNState = MemoryNNStates[index];
+            
             if( is_done ){
-                
                 auto value = policy.critic->forward(MemoryNNState.squeeze());
                 discounted_reward = value;
             }
             else if(is_terminal ){
-               torch::Tensor discounted_reward = torch::tensor({0.0});
+               discounted_reward = torch::tensor({0.0});
             }
             discounted_reward = reward + (gamma * discounted_reward);
             discounted_rewards.insert(discounted_rewards.begin(), discounted_reward);
         }
         cout << "rewards: " << MemoryNNRewards << endl;
         torch::Tensor Rewards = torch::cat(discounted_rewards);
-        
+        Rewards=Rewards.detach();
         cout << "Rewards: \n" << Rewards.requires_grad() << endl;
         cout << "Merged Rewards: \n" << Rewards << endl;
 
@@ -337,7 +342,7 @@ class PPO {
             printSizes(Rewards);
             printSizes(state_values);
 
-            Rewards=Rewards.detach();
+            
             cout << "state_values: " << state_values << endl;
             // cout << "value: \n" << state_values << endl;
             auto advantages = Rewards - state_values.detach();
