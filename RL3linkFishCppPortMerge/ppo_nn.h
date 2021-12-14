@@ -41,25 +41,29 @@ void MemoryNN::merge(MemoryNN& r){
     auto rewardsDiff = r.rewards.end() - r.rewards.begin();
     cout << "begin Merge" << rewardsDiff << endl;
     this->actions.insert(this->actions.end(), r.actions.begin(), r.actions.begin()+rewardsDiff);
-    cout << "begin Merge" << endl;
+    // cout << "begin Merge" << endl;
     r.actions.erase(r.actions.begin(), r.actions.begin()+rewardsDiff);
-    cout << "begin Merge" << endl;
+    // cout << "begin Merge" << endl;
     this->states.insert(this->states.end(), r.states.begin(), r.states.begin() + rewardsDiff);
-    cout << "begin Merge" << endl;
+    // cout << "begin Merge" << endl;
     r.states.erase(r.states.begin(), r.states.begin() + rewardsDiff);
-    cout << "begin Merge" << endl;
+    // cout << "begin Merge" << endl;
     this->logprobs.insert(this->logprobs.end(), r.logprobs.begin(), r.logprobs.begin() + rewardsDiff);
-    cout << "begin Merge" << endl;
+    // cout << "begin Merge" << endl;
     r.logprobs.erase(r.logprobs.begin(), r.logprobs.begin() + rewardsDiff);
-    cout << "begin Merge" << endl;
+    // cout << "begin Merge" << endl;
     this->rewards.insert(this->rewards.end(), r.rewards.begin(), r.rewards.begin() + rewardsDiff);
-    cout << "begin Merge" << endl;
+    // cout << "begin Merge" << endl;
     r.rewards.erase(r.rewards.begin(), r.rewards.begin() + rewardsDiff);
-    cout << "begin Merge" << endl;
+    // cout << "begin Merge" << endl;
     this->is_terminals.insert(this->is_terminals.end(), r.is_terminals.begin(), r.is_terminals.begin() + rewardsDiff);
-    cout << "begin Merge" << endl;
+    // cout << "begin Merge" << endl;
     r.is_terminals.erase(r.is_terminals.begin(), r.is_terminals.begin() + rewardsDiff);
-    // cout << "Merge successful" << endl;
+    // cout << "begin Merge" << endl;
+    this->is_dones.insert(this->is_dones.end(), r.is_dones.begin(), r.is_dones.begin() + rewardsDiff);
+    // cout << "begin Merge" << endl;
+    r.is_dones.erase(r.is_dones.begin(), r.is_dones.begin() + rewardsDiff);
+    cout << "Merge successful" << endl;
 
 }
 
@@ -357,30 +361,38 @@ class PPO {
     auto update(MemoryNN MemoryNN){
         auto MemoryNNRewards = MemoryNN.rewards;
         auto MemoryNNIsTerminals = MemoryNN.is_terminals;
+        auto MemoryNNIsDones = MemoryNN.is_dones;
         auto MemoryNNStates = MemoryNN.states;
         std::reverse(MemoryNNRewards.begin(), MemoryNNRewards.end());
         std::reverse(MemoryNNIsTerminals.begin(), MemoryNNIsTerminals.end());
+        std::reverse(MemoryNNIsDones.begin(), MemoryNNIsDones.end());
         std::reverse(MemoryNNStates.begin(), MemoryNNStates.end());
         torch::Tensor discounted_reward = torch::tensor({0.0});
         vector<torch::Tensor> discounted_rewards;
+
+        cout << "MemoryNNIsDones: " << MemoryNNIsDones << endl;
+        
         // cout << MemoryNNRewards.size() << " " << MemoryNNIsTerminals.size() << " " << MemoryNNStates.size() << endl;
         for(int index = 0; index < MemoryNNRewards.size(); index++){
             auto reward = MemoryNNRewards[index];
             auto is_terminal = MemoryNNIsTerminals[index];
+            auto is_done = MemoryNNIsDones[index];
             auto MemoryNNState = MemoryNNStates[index];
-            if(is_terminal){
-                cout << "state to critic" << MemoryNNState.squeeze() << endl;;
+            if( is_done ){
+                // cout << "state to critic" << MemoryNNState.squeeze() << endl;;
                 auto value = policy.critic->forward(MemoryNNState.squeeze());
                 discounted_reward = value;
+            }elif(is_terminal ){
+               torch::Tensor discounted_reward = torch::tensor({0.0});
             }
             discounted_reward = reward + (gamma * discounted_reward);
             discounted_rewards.insert(discounted_rewards.begin(), discounted_reward);
         }
         cout << "rewards: " << MemoryNNRewards << endl;
         torch::Tensor Rewards = torch::cat(discounted_rewards);
-        cout << "discounted_rewards: \n" << discounted_rewards[0].requires_grad() << endl;
-        cout << "Rewards: \n" << Rewards.requires_grad() << endl;
-        // cout << "Merged Rewards: \n" << Rewards << endl;
+        // cout << "discounted_rewards: \n" << discounted_rewards[0].requires_grad() << endl;
+        // cout << "Rewards: \n" << Rewards.requires_grad() << endl;
+        cout << "Merged Rewards: \n" << Rewards << endl;
 
         // rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
         auto old_states = torch::squeeze(torch::stack(MemoryNN.states));
@@ -434,13 +446,14 @@ class PPO {
             cout << "LOSS2 is: " << loss2.mean() << endl;
             cout << "LOSS3 is: " << loss3.mean() << endl;
             // auto loss = -torch::min(surr1, surr2) + 0.5*MseLoss->forward(state_values, newRewardsT) - 0.01*dist_entropy;
-            // cout << "LOSS is: " << loss << endl;
+            cout << "LOSS is: " << loss.mean() << endl;
             // cout << "LOSS is: " << loss.requires_grad() << endl;
             // cout << "LOSS is: " << loss.grad_fn()->name() << endl;
             // # take gradient step
             optimizer->zero_grad();
             loss.mean().backward();
             optimizer->step();
+            
         }
         
         // std::stringstream in;
