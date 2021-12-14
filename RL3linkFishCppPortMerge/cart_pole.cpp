@@ -21,6 +21,8 @@ inline void env_run(int myid)
 {
   printf("environment running on process myid: %d \n", myid);
   //OPTIONAL: action bounds
+  std::ofstream myfile;
+  myfile.open ("./proc" + std::to_string(nprocs)+"_log.txt");
   bool bounded = true;
   std::vector<double> upper_action_bound{10}, lower_action_bound{-10};
 
@@ -98,6 +100,7 @@ inline void env_run(int myid)
 
   }// end of train loop
   printf("environment node %d done \n", myid);
+  myfile.close();
   return;
 }
 
@@ -223,8 +226,9 @@ int main(int argc, char**argv)
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   
+
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  myfile.open ("./proc" + std::to_string(nprocs)+"_log.txt");
+  // myfile.open ("./proc" + std::to_string(nprocs)+"_log.txt");
   if (myid == 0) {
     printf("There are %d processes running in this MPI program\n", nprocs);
     NN_run();
@@ -233,6 +237,6 @@ int main(int argc, char**argv)
     env_run(myid);
   }
   MPI_Finalize();
-  myfile.close();
+  //myfile.close();
   return 0;
 }
