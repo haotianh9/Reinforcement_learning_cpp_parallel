@@ -34,7 +34,7 @@ class MemoryNN {
 };
 
 void MemoryNN::merge(MemoryNN& r){
-
+    
     cout << "States size: " << r.states.size() << " Rewards size: " << r.rewards.size() << " " << endl;
 
 

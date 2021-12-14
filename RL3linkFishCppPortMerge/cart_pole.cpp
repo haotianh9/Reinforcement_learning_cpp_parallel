@@ -22,7 +22,7 @@ inline void env_run(int myid)
   printf("environment running on process myid: %d \n", myid);
   //OPTIONAL: action bounds
   std::ofstream myfile;
-  myfile.open ("./proc" + std::to_string(nprocs)+"_log.txt");
+  myfile.open ("./proc" + std::to_string(myid)+"_log.txt");
   bool bounded = true;
   std::vector<double> upper_action_bound{10}, lower_action_bound{-10};
 
@@ -165,9 +165,10 @@ inline void NN_run(){
           cout << "UPDATING " << n_timestep << endl;
           MemoryNN mergedMemory;
           for(int proc = 1; proc < nprocs; proc++){
-            cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc-1].states << '\n'
-                << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc-1].actions << '\n'
-                << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc-1].rewards << endl;
+            // cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc-1].states << '\n'
+            //     << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc-1].actions << '\n'
+            //     << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc-1].rewards << endl;
+            cout << "begining merging memory from " << proc << endl;
             mergedMemory.merge(memNN[proc-1]);
             memNN[proc-1].clear();
           }
