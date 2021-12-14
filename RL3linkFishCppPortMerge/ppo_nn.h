@@ -37,8 +37,6 @@ class MemoryNN {
 };
 
 void MemoryNN::merge(MemoryNN& r){
-    // auto rewardsDiff = r.rewards.end() - r.rewards.begin();
-    // cout << "begin Merge" << rewardsDiff << endl;
     this->actions.insert(this->actions.end(), r.actions.begin(), r.actions.end());
     this->states.insert(this->states.end(), r.states.begin(), r.states.end());
     this->logprobs.insert(this->logprobs.end(), r.logprobs.begin(), r.logprobs.end());
@@ -208,7 +206,6 @@ struct ActorCritic: torch::nn::Module {
         torch::Tensor action_mean = actor->forward(state);
         
         torch::Tensor cov_mat = torch::diag(action_var);
-        
 
 
         // Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToMatrix(action_mean);
@@ -257,8 +254,8 @@ struct ActorCritic: torch::nn::Module {
         auto action_logprobs = torch::randn({state.sizes()[0]});
         auto dist_entropy = torch::randn({state.sizes()[0]});
         for(int sample = 0; sample < state.sizes()[0]; sample++){
-            
             auto sampleActionMean = action_mean.index({sample}).reshape({action_mean.sizes()[1], action.sizes()[2]?action.sizes()[2]:1});;
+
             Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToVector(sampleActionMean);
             auto sampleCovar = cov_mat.index({sample});
             // for(auto s: sampleCovar.sizes()){

@@ -177,7 +177,7 @@ inline void NN_run(){
                 << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc-1].actions << '\n'
                 << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc-1].rewards << endl;
             mergedMemory.merge(memNN[proc-1]);
-            // memNN[proc-1].clear();
+            memNN[proc-1].clear();
           }
           ppo.update(mergedMemory);
           n_timestep = 0;
