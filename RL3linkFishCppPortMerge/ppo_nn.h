@@ -118,11 +118,12 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
 }
 auto multivariateEntropy(int k, torch::Tensor& covar){
     float v1 = pow(2*M_PI*M_E, k);
+    cout << covar << endl;
     cout << "multivariateEntropy" << endl;
-    cout  << v1 << endl;
+    //cout  << v1 << endl;
     auto a= torch::logdet(covar);
     printSizes(a);
-    // cout << a << endl;
+    cout << a << endl;
     
     return  0.5*torch::logdet(covar).add(v1);
 }
