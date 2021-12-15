@@ -148,7 +148,7 @@ public:
       return std::fabs(angle-M_PI)<M_PI/6 ? 1 : 0;
     #else
       //return -1*( fabs(u.y3)>M_PI/15 || fabs(u.y1)>2.4 );
-      auto reward = 1 - ( std::fabs(u.y3)>M_PI/15 || std::fabs(u.y1)>2.4 );
+      auto reward =(1 - ( std::fabs(u.y3)>M_PI/15 || std::fabs(u.y1)>2.4 )) ;
       // std::cout << "reward is: " << reward << std::endl;
       return reward;
     #endif

@@ -2,7 +2,7 @@
 #define ppo_nn
 #include <torch/torch.h>
 #include <iostream>
-#include "eigenmvn.h"
+// #include "eigenmvn.h"
 #include <vector>
 #include <math.h>
 #include <time.h>
@@ -57,21 +57,21 @@ void MemoryNN::clear(){
     this->is_timeups.clear();
 }
 
-template<typename Scalar>
-torch::Tensor eigenToTensor(Eigen::Matrix<Scalar, Eigen::Dynamic, -1> mat){
-    torch::Tensor out = torch::randn({mat.rows(), mat.cols()});
-    int i = 0, j = 0;
-    for(auto row: mat.rowwise()){
-        j = 0;
-        for(auto elem: row){
-            out[i][j] = elem;
-            j++;            
-        }
-        i++;
-    }
-    return out;
-    // return torch::Tensor();
-}
+// template<typename Scalar>
+// torch::Tensor eigenToTensor(Eigen::Matrix<Scalar, Eigen::Dynamic, -1> mat){
+//     torch::Tensor out = torch::randn({mat.rows(), mat.cols()});
+//     int i = 0, j = 0;
+//     for(auto row: mat.rowwise()){
+//         j = 0;
+//         for(auto elem: row){
+//             out[i][j] = elem;
+//             j++;            
+//         }
+//         i++;
+//     }
+//     return out;
+//     // return torch::Tensor();
+// }
 
 auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch::Tensor& action){
     // cout << covar << endl;
@@ -102,6 +102,8 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
     // printSizes(a);
     // float b= log(2 * M_PI) * action_mean.sizes()[1];
     // cout << b << endl;
+    printSizes(action_mean);
+    cout << "action_mean.sizes()[1]:    " << action_mean.sizes()[1]  << endl; 
     auto denominator =   torch::logdet(covar).add(log(2 * M_PI) * action_mean.sizes()[1]);
     denominator = denominator/2;
     // cout << "numerator " << endl;
@@ -118,46 +120,46 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
 }
 auto multivariateEntropy(int k, torch::Tensor& covar){
     float v1 = pow(2*M_PI*M_E, k);
-    cout << covar << endl;
+    // cout << covar << endl;
     cout << "multivariateEntropy" << endl;
     //cout  << v1 << endl;
-    auto a= torch::logdet(covar);
-    printSizes(a);
-    cout << a << endl;
+    // auto a= torch::logdet(covar);
+    // printSizes(a);
+    // cout << a << endl;
     
     return  0.5*torch::logdet(covar).add(v1);
 }
 
-// template<typename Scalar>
-Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> tensorToMatrix(torch::Tensor& in){
-    // cout << "Tensor to matrix begin" << endl;
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> out;
-    int d1 = in.sizes()[0];
-    int d2 = (in.sizes().size()>1?in.sizes()[1]:1);
-    out.resize(d1, d2);
+// // template<typename Scalar>
+// Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> tensorToMatrix(torch::Tensor& in){
+//     // cout << "Tensor to matrix begin" << endl;
+//     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> out;
+//     int d1 = in.sizes()[0];
+//     int d2 = (in.sizes().size()>1?in.sizes()[1]:1);
+//     out.resize(d1, d2);
     
-    for(int i = 0; i < out.rows(); i++){
-        for(int j = 0; j < out.cols(); j++){
-            out(i, j) = in.index({i, j}).item().toDouble();
-        }
-    }
-    // cout << "Tensor to matrix end" << endl;
-    return out;
-}
-// template<typename Scalar>
-Eigen::Matrix<double, Eigen::Dynamic, 1> tensorToVector(torch::Tensor& in){
-    // cout << "Tensor to vector begin" << endl;
-    Eigen::Matrix<double, Eigen::Dynamic, 1> out;
-    int d1 = in.sizes()[0];
+//     for(int i = 0; i < out.rows(); i++){
+//         for(int j = 0; j < out.cols(); j++){
+//             out(i, j) = in.index({i, j}).item().toDouble();
+//         }
+//     }
+//     // cout << "Tensor to matrix end" << endl;
+//     return out;
+// }
+// // template<typename Scalar>
+// Eigen::Matrix<double, Eigen::Dynamic, 1> tensorToVector(torch::Tensor& in){
+//     // cout << "Tensor to vector begin" << endl;
+//     Eigen::Matrix<double, Eigen::Dynamic, 1> out;
+//     int d1 = in.sizes()[0];
 
-    out.resize(d1, 1);
-    for(int i = 0; i < out.rows(); i++){
-            out(i,0) = in.index({i}).item().toDouble();
-    }
-    // cout << "Tensor to vector end" << endl;
-    return out;
+//     out.resize(d1, 1);
+//     for(int i = 0; i < out.rows(); i++){
+//             out(i,0) = in.index({i}).item().toDouble();
+//     }
+//     // cout << "Tensor to vector end" << endl;
+//     return out;
 
-}
+// }
 
 //TODO: make it gpu
 struct ActorCritic: torch::nn::Module {
@@ -227,7 +229,7 @@ struct ActorCritic: torch::nn::Module {
         printSizes(action_logprobs);
         cout << "action_mean.sizes()[1]: " << action_mean.sizes()[1] << endl;
         auto dist_entropy = multivariateEntropy(action_mean.sizes()[1], cov_mat);
-        cout << "dist_entropy: " << dist_entropy.grad_fn()->name() << endl;
+        // cout << "dist_entropy: " << dist_entropy.grad_fn()->name() << endl;
         printSizes(dist_entropy);
 
         // auto action_logprobs = torch::randn({state.sizes()[0]});
