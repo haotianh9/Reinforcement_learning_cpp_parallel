@@ -17,7 +17,7 @@
 #include "mpi.h"
 #include <unistd.h>
 #include "ppo_nn.h"
-inline void env_run(int myid)
+inline void env_run(int myid, MPI_Comm& env_comm)
 {
   printf("environment running on process myid: %d \n", myid);
   //OPTIONAL: action bounds
@@ -81,16 +81,20 @@ inline void env_run(int myid)
       obs.push_back(reward); 
       if(terminate){
         obs.push_back(TERMINATE);
-        MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
+        
         printf("myid: %d episode: %d TERMINATED!! \n", myid,i); 
-        break;
+        // break;
       }else if (j == (N_timestep-1)){
+        cout << "TIMEUP" << endl;
         obs.push_back(TIMEUP);
-        MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
+        //MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }else{
         obs.push_back(NORMAL);
-        MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
+        //MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }
+      MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
+      if(terminate || (j==(N_timestep-1))) MPI_Barrier(env_comm);
+      if(terminate) break;
     }  //end of simulation loop
     printf("------myid: %d episode: %d total reward: %f\n", myid,i,episode_reward);
     myfile <<"myid: " << myid;
@@ -102,6 +106,18 @@ inline void env_run(int myid)
   printf("environment node %d done \n", myid);
   myfile.close();
   return;
+}
+
+string to_string(TRAIN_STATUS status){
+  /*enum TRAIN_STATUS {NORMAL = 0, TERMINATE, TIMEUP, START};*/
+  if(status==TERMINATE) return "TERMINATE";
+  if(status==NORMAL) return "NORMAL";
+  if(status==TIMEUP) return "TIMEUP";
+  if(status==START) return "START";
+  else {
+    cout << "INVALID STATUS: " << (int) status << endl;
+    return "INVALID";
+  }
 }
 
 // inline void respond_action(int envid, Memory& mem, MemoryNN& memNN, PPO ppo, bool end, int& n_ep, float dbufsrt[]){
@@ -147,7 +163,7 @@ inline void NN_run(){
     for (int i = 1; i <= nprocs-1; i++){
       MPI_Recv(obs_and_more.data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &status);
       printf("received observations and more from %d \n",i);
-    
+      cout << "Env status is: " << to_string(env_status);
 
       float reward = obs_and_more[obs_vars];
       env_status = static_cast<TRAIN_STATUS>(int(obs_and_more[obs_vars+1]+1E-3));
@@ -164,14 +180,29 @@ inline void NN_run(){
         if(n_timestep >= updateTimestep){
           cout << "UPDATING " << n_timestep << endl;
           MemoryNN mergedMemory;
+          bool shouldUpdate = true;
           for(int proc = 1; proc < nprocs; proc++){
-            // cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc-1].states << '\n'
-            //     << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc-1].actions << '\n'
-            //     << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc-1].rewards << endl;
+            cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc-1].states.size() << '\n'
+                << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc-1].actions.size() << '\n'
+                << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc-1].rewards.size() << endl;
             cout << "begining merging memory from " << proc << endl;
-            mergedMemory.merge(memNN[proc-1]);
-            memNN[proc-1].clear();
+            if(memNN[proc-1].states.size()!=memNN[proc-1].actions.size() || memNN[proc-1].states.size() != memNN[proc-1].rewards.size()){
+              shouldUpdate = false;
+            }
+            
           }
+          cout << "Should update: " << shouldUpdate << endl;
+          if(shouldUpdate){
+            for(int proc = 1; proc < nprocs; proc++){
+              cout << "proc" << ' ' << proc << ' ' << "States in memory:" << memNN[proc-1].states.size() << '\n'
+                  << "proc" << ' ' << proc << ' ' << "Actions in memory:" << memNN[proc-1].actions.size() << '\n'
+                  << "proc" << ' ' << proc << ' ' << "Rewards in memory:" << memNN[proc-1].rewards.size() << endl;
+              cout << "begining merging memory from " << proc << endl;
+              mergedMemory.merge(memNN[proc-1]);
+              memNN[proc-1].clear();
+            }
+          }
+          
           ppo.update(mergedMemory);
           n_timestep = 0;
         }
@@ -229,13 +260,15 @@ int main(int argc, char**argv)
   
 
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+  MPI_Comm env_comm;
+  MPI_Comm_split(MPI_COMM_WORLD, myid==0, myid, &env_comm);
   // myfile.open ("./proc" + std::to_string(nprocs)+"_log.txt");
   if (myid == 0) {
     printf("There are %d processes running in this MPI program\n", nprocs);
     NN_run();
   }
   else {
-    env_run(myid);
+    env_run(myid, env_comm);
   }
   MPI_Finalize();
   //myfile.close();
