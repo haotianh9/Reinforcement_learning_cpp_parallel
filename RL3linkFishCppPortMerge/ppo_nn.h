@@ -179,13 +179,10 @@ struct ActorCritic: torch::nn::Module {
         }))){
     
         int64_t dims[] = {action_dim};
-        action_var = register_parameter(
-            "action_var",
-            torch::full(
+        action_var =torch::full(
                 torch::IntArrayRef(dims, 1),
-                torch::Scalar(action_std*action_std)
-            )
-        );
+                torch::Scalar(action_std*action_std));
+        // cout << "action_var: " << action_var.grad_fn()->name() << endl;
         this -> action_std = action_std;
         //why register?
     }
@@ -220,7 +217,7 @@ struct ActorCritic: torch::nn::Module {
         auto action_var_expanded = action_var.expand_as(action_mean);
         
         auto cov_mat = torch::diag_embed(action_var_expanded);
-        
+        cout << "cov_mat: " << cov_mat.grad_fn()->name() << endl;
         // cout << "%%%%%%%%%%%%%%%BUNCH OF STUFFS" << '\n' 
         //     << action_mean << action_var_expanded << cov_mat << endl;
 
@@ -228,7 +225,7 @@ struct ActorCritic: torch::nn::Module {
         auto action_logprobs = multivariateLogProb(action_mean, cov_mat, action);
         cout << "action_logprobs: " << action_logprobs.grad_fn()->name() << endl;
         printSizes(action_logprobs);
-        cout << "action_mean.sizes()[0]: " << action_mean.sizes()[0] << endl;
+        cout << "action_mean.sizes()[1]: " << action_mean.sizes()[1] << endl;
         auto dist_entropy = multivariateEntropy(action_mean.sizes()[1], cov_mat);
         cout << "dist_entropy: " << dist_entropy.grad_fn()->name() << endl;
         printSizes(dist_entropy);
