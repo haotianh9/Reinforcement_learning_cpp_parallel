@@ -117,10 +117,14 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
 
 }
 auto multivariateEntropy(int k, torch::Tensor& covar){
-    double v1 = pow(2*M_PI*M_E, k);
-    // HH: I haven't figure out where the problem is, but the calculated value is always half of the correct value, so I removed the 0.5*
-    // Also if the standard deviation is a function of trainable variables in neural network, by doing todouble and tensor will remove it from the gradient chain, which is wrong. But not it's fine
-    return  torch::log(torch::tensor({v1 * torch::det(covar).item().toDouble()}));
+    float v1 = pow(2*M_PI*M_E, k);
+    cout << "multivariateEntropy" << endl;
+    cout  << v1 << endl;
+    auto a= torch::logdet(covar);
+    printSizes(a);
+    // cout << a << endl;
+    
+    return  0.5*torch::logdet(covar).add(v1);
 }
 
 // template<typename Scalar>
@@ -224,7 +228,7 @@ struct ActorCritic: torch::nn::Module {
         cout << "action_logprobs: " << action_logprobs.grad_fn()->name() << endl;
         printSizes(action_logprobs);
         cout << "action_mean.sizes()[0]: " << action_mean.sizes()[0] << endl;
-        auto dist_entropy = multivariateEntropy(action_mean.sizes()[0], cov_mat);
+        auto dist_entropy = multivariateEntropy(action_mean.sizes()[1], cov_mat);
         cout << "dist_entropy: " << dist_entropy.grad_fn()->name() << endl;
         printSizes(dist_entropy);
 
