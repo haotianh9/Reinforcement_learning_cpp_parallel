@@ -15,7 +15,7 @@ std::mt19937_64 eng_NN(rd_NN());
 std::uniform_int_distribution<unsigned long> distr_NN;
 
 void printSizes(torch::Tensor& a){
-    cout << a.sizes()[0] << " " << a.sizes()[1] << endl;
+    cout << a.sizes()[0] << " " << a.sizes()[1] << " " << a.sizes()[2] << endl;
 }
 class MemoryNN {
     public:
@@ -34,7 +34,7 @@ class MemoryNN {
 };
 
 void MemoryNN::merge(MemoryNN& r){
-    
+
     cout << "States size: " << r.states.size() << " Rewards size: " << r.rewards.size() << " " << endl;
 
 
@@ -80,18 +80,37 @@ auto multivariateLogProb(torch::Tensor& action_mean, torch::Tensor& covar, torch
     // cout << "Action is: " << action << endl;
     // cout << "Action mean is: " << action_mean << endl;
     // cout << "covar is: " << covar << endl;
-    auto diff = action - action_mean;
-  
+    action=action.unsqueeze(1);
+    // printSizes(action);
+    // printSizes(action_mean);
+    // printSizes(covar);
+    auto diff = (action - action_mean).unsqueeze(2);
+    // printSizes(diff);
+    // cout << "diff is: " << diff << endl;
+
     auto covarInverse = covar.inverse();
-  
-    auto numerator = -0.5 * (diff.transpose(0, 1).matmul(covarInverse.matmul( diff)));
-    numerator = torch::exp(numerator);
+    // printSizes(covarInverse);
+
+    // auto a=covarInverse.matmul( diff);
+    // cout << "a" << endl;
+    // printSizes(a);
+    auto numerator = -0.5 * (diff.transpose(1,2).matmul(covarInverse.matmul( diff)));
+    // printSizes(numerator);
+    // numerator = torch::exp(numerator);
     // cout << "numerator " << numerator << endl;
-    auto denominator = pow(2 * M_PI, action_mean.sizes()[0]) * torch::det(covar).reshape({1, 1});
-    denominator = torch::sqrt(denominator);
-    // cout << "denominator " << denominator << endl;
-    numerator = numerator / denominator;
-    numerator =torch::log(numerator);
+    // auto a=torch::logdet(covar);
+    // printSizes(a);
+    // float b= log(2 * M_PI) * action_mean.sizes()[1];
+    // cout << b << endl;
+    auto denominator =   torch::logdet(covar).add(log(2 * M_PI) * action_mean.sizes()[1]);
+    denominator = denominator/2;
+    // cout << "numerator " << endl;
+    // printSizes(numerator);
+    // cout << "denominator " << endl;
+    // printSizes(denominator);
+    numerator = numerator.squeeze() - denominator;
+    // cout << "output " << endl;
+    // printSizes(numerator);
   
 
     return numerator;
@@ -199,28 +218,48 @@ struct ActorCritic: torch::nn::Module {
         
         // cout << "%%%%%%%%%%%%%%%BUNCH OF STUFFS" << '\n' 
         //     << action_mean << action_var_expanded << cov_mat << endl;
-        auto action_logprobs = torch::randn({state.sizes()[0]});
-        auto dist_entropy = torch::randn({state.sizes()[0]});
-        for(int sample = 0; sample < state.sizes()[0]; sample++){
-            auto sampleActionMean = action_mean.index({sample}).reshape({action_mean.sizes()[1], action.sizes()[2]?action.sizes()[2]:1});;
 
-            // Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToVector(sampleActionMean);
-            auto sampleCovar = cov_mat.index({sample});
+        cout << "begin multivariateLogProb" << endl;
+        auto action_logprobs = multivariateLogProb(action_mean, cov_mat, action);
+        cout << "action_logprobs: " << action_logprobs.grad_fn()->name() << endl;
+        printSizes(action_logprobs);
+        cout << "action_mean.sizes()[0]: " << action_mean.sizes()[0] << endl;
+        auto dist_entropy = multivariateEntropy(action_mean.sizes()[0], cov_mat);
+        cout << "dist_entropy: " << dist_entropy.grad_fn()->name() << endl;
+        printSizes(dist_entropy);
+
+        // auto action_logprobs = torch::randn({state.sizes()[0]});
+        // auto dist_entropy = torch::randn({state.sizes()[0]});
+        // for(int sample = 0; sample < state.sizes()[0]; sample++){
+        //     auto sampleActionMean = action_mean.index({sample}).reshape({action_mean.sizes()[1], action.sizes()[2]?action.sizes()[2]:1});;
+
+        //     // Eigen::Matrix<double, Eigen::Dynamic, 1> eigen_mean = tensorToVector(sampleActionMean);
+        //     auto sampleCovar = cov_mat.index({sample});
             
-            // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(sampleCovar);
-            // Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true,distr_NN(eng_NN));
-            // auto squeezedAction = torch::squeeze(action);
-            // PRINT_SIZES(squeezedAction.sizes());
-            // cout << "Action sizes" << " " << action.sizes()[1] << " " << action.sizes()[2] << endl;
-            auto sampleAction = action.index({sample}).reshape({action.sizes()[1]?action.sizes()[1]:1, action.sizes()[2]?action.sizes()[2]:1});
-            auto action_logprob = multivariateLogProb(sampleActionMean, sampleCovar, sampleAction);
-            // cout << "Evaluation action_logprob " << action_logprob << endl;
-            //TODO: make it general
-            action_logprobs.index({sample}) = action_logprob.squeeze();
-            auto sample_dist_entropy = multivariateEntropy(sampleActionMean.sizes()[0], sampleCovar);
-            dist_entropy.index({sample}) = sample_dist_entropy.squeeze();
-        }
+        //     // Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eigen_covar = tensorToMatrix(sampleCovar);
+        //     // Eigen::EigenMultivariateNormal<double> normalSolver(eigen_mean, eigen_covar,true,distr_NN(eng_NN));
+        //     // auto squeezedAction = torch::squeeze(action);
+        //     // PRINT_SIZES(squeezedAction.sizes());
+        //     // cout << "Action sizes" << " " << action.sizes()[1] << " " << action.sizes()[2] << endl;
+        //     auto sampleAction = action.index({sample}).reshape({action.sizes()[1]?action.sizes()[1]:1, action.sizes()[2]?action.sizes()[2]:1});
+
+
+        //     cout << "sampleActionMean: " << sampleActionMean.grad_fn()->name() << endl;
+        //     cout << "sampleCovar: " << sampleCovar.grad_fn()->name() << endl;
+        //     // cout << "sampleAction: " << sampleAction.grad_fn()->name() << endl;
+        //     auto action_logprob = multivariateLogProb(sampleActionMean, sampleCovar, sampleAction);
+        //     cout << "action_logprob: " << action_logprob.grad_fn()->name() << endl;
+        //     // cout << "Evaluation action_logprob " << action_logprob << endl;
+        //     //TODO: make it general
+        //     action_logprobs.index({sample}) = action_logprob.squeeze();
+        //     auto sample_dist_entropy = multivariateEntropy(sampleActionMean.sizes()[0], sampleCovar);
+        //     dist_entropy.index({sample}) = sample_dist_entropy.squeeze();
+        // }
         
+        
+
+
+
         
         //Why forward needed
         auto state_value = critic->forward(state);
@@ -299,7 +338,7 @@ class PPO {
         torch::Tensor Rewards = torch::cat(discounted_rewards);
         Rewards=Rewards.detach();
         cout << "Rewards: \n" << Rewards.requires_grad() << endl;
-        cout << "Merged Rewards: \n" << Rewards << endl;
+        // cout << "Merged Rewards: \n" << Rewards << endl;
 
         // rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5);
         auto old_states = torch::squeeze(torch::stack(MemoryNN.states)).detach();
@@ -314,8 +353,8 @@ class PPO {
             auto state_values = std::get<1>(res);
             auto dist_entropy = std::get<2>(res);
 
-            cout << "value: \n" << state_values.requires_grad() << endl;
-            cout << "value: \n" << state_values.grad_fn()->name() << endl;
+            // cout << "value: \n" << state_values.requires_grad() << endl;
+            // cout << "value: \n" << state_values.grad_fn()->name() << endl;
             
 
 
@@ -335,9 +374,11 @@ class PPO {
             printSizes(state_values);
 
             
-            cout << "state_values: " << state_values << endl;
+            // cout << "state_values: " << state_values << endl;
             // cout << "value: \n" << state_values << endl;
             auto advantages = Rewards - state_values.detach();
+            cout << "state_values: \n" << state_values.requires_grad() << endl;
+            cout << "state_values: \n" << state_values.grad_fn()->name() << endl;
             // cout << "advantages: \n" << advantages << endl;
             cout << "advantages: \n" << advantages.requires_grad() << endl;
             // cout << "advantages: \n" << advantages.grad_fn()->name() << endl;
@@ -361,7 +402,7 @@ class PPO {
             cout << "LOSS is: " << loss.grad_fn()->name() << endl;
             // # take gradient step
             optimizer->zero_grad();
-            // loss.mean().backward(1);
+            loss.mean().backward();
             optimizer->step();
 
             cout << "finish " << index <<" epoch" << endl; 
