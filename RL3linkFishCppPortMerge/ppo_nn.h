@@ -217,7 +217,7 @@ struct ActorCritic: torch::nn::Module {
         auto action_var_expanded = action_var.expand_as(action_mean);
         
         auto cov_mat = torch::diag_embed(action_var_expanded);
-        cout << "cov_mat: " << cov_mat.grad_fn()->name() << endl;
+        // cout << "cov_mat: " << cov_mat.grad_fn()->name() << endl;
         // cout << "%%%%%%%%%%%%%%%BUNCH OF STUFFS" << '\n' 
         //     << action_mean << action_var_expanded << cov_mat << endl;
 
