@@ -205,14 +205,15 @@ inline void NN_run(){
     for (int i = 1; i <= nprocs-1; i++){
       
       int flag = -1;
-      if(recv[i]==MPI_REQUEST_NULL){
+      if(recv[i] == MPI_REQUEST_NULL){
         MPI_Irecv(obs_and_more[i].data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &recv[i]);
         continue;
       } 
       MPI_Test(&recv[i], &flag, &status);
       
       // MPI_Status status;
-      if(flag){
+      if(flag)
+      {
         cout << "REQUEST IS: " << (int)(recv[i]==MPI_REQUEST_NULL) << endl;
         // MPI_Test(&r[i], &flag, &status);
 
@@ -268,7 +269,7 @@ inline void NN_run(){
         
           }
       }
-    else respond_to_env(i,memNN[i-1], ppo, end, obs_and_more[i], env_actions[i]);
+    else respond_to_env(i, memNN[i-1], ppo, end, obs_and_more[i], env_actions[i]);
 
     
     cout << "##########################################################################################" << endl;
@@ -326,11 +327,11 @@ int main(int argc, char**argv)
 
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   MPI_Comm env_comm;
+  // myid == 0 for NN update, otherwise for (myid)th environment
   MPI_Comm_split(MPI_COMM_WORLD, myid==0, myid, &env_comm);
   int sub_procs;
   MPI_Comm_size(env_comm, &sub_procs);
-  cout << "Sub procs: " << sub_procs << endl;
-  // myfile.open ("./proc" + std::to_string(nprocs)+"_log.txt");
+  cout << "Sub procs: " << myid << "/" << sub_procs << endl;
   if (myid == 0) {
     printf("There are %d processes running in this MPI program\n", nprocs);
     NN_run();
@@ -339,6 +340,5 @@ int main(int argc, char**argv)
     env_run(myid, env_comm);
   }
   MPI_Finalize();
-  //myfile.close();
   return 0;
 }
