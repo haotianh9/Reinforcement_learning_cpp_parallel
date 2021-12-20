@@ -194,9 +194,13 @@ struct ActorCritic: torch::nn::Module {
         torch::Tensor action_mean = actor->forward(state);
         
         torch::Tensor cov_mat = torch::diag(action_var);
-
-        torch::Tensor action = torch::normal(0, action_std, {action_mean.size(0)});
-        cout << "COME ON!!!" << action_std << action << endl;
+        // torch::Tensor action = 0.0;
+        // cout << "AAAAAAAAAAAAAAAAAAAAAAA" << action_mean.item<float>() << endl;
+        // TODO: case of multiple action variables in the following line
+        torch::Tensor action = torch::normal(action_mean.item<double>(), action_std, {action_mean.size(0)});
+        cout << "COME ON!!! mean: " << action_mean.item<float>() << '\n'
+             << "std: " << action_std << '\n'
+             << "action: " << action.item<float>() << endl;
 
         // TODO: transform to real
 

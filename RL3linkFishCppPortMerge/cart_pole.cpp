@@ -194,7 +194,7 @@ inline void NN_run(){
   
   for(int i = 0; i < nprocs; i++) recv[i] = MPI_REQUEST_NULL;
   while(true){
-     cout << "Iteration" << endl;
+    //  cout << "Iteration" << endl;
     //  for (int i = 1; i <= nprocs-1; i++){
     //     MPI_Irecv(obs_and_more[i].data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &recv[i]);
     //  }
@@ -208,7 +208,7 @@ inline void NN_run(){
       if(recv[i] == MPI_REQUEST_NULL){
         MPI_Irecv(obs_and_more[i].data(), obs_vars+2, MPI_FLOAT, i, i, MPI_COMM_WORLD, &recv[i]);
         continue;
-      } 
+      }
       MPI_Test(&recv[i], &flag, &status);
       
       // MPI_Status status;
@@ -282,7 +282,7 @@ inline void NN_run(){
 }
   
     
-    printf("total: Nepisodes: %d ; Ntimestep: %d \n" ,n_ep, n_timestep);
+    // printf("total: Nepisodes: %d ; Ntimestep: %d \n" ,n_ep, n_timestep);
 
     // for (int i=1;i<=nprocs-1;i++){
     //   MPI_Irecv(dbufsrt, obs_vars+2, MPI_DOUBLE, i, i, MPI_COMM_WORLD, &reqs[i-1]);  

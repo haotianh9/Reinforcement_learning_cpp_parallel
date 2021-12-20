@@ -106,7 +106,7 @@ public:
     #if SWINGUP
       return step>=500 || std::fabs(u.y1)>2.4;
     #else
-      return step>=500 || std::fabs(u.y1)>2.4 || std::fabs(u.y3)>M_PI/15;
+      return std::fabs(u.y1)>2.4 || std::fabs(u.y3)>M_PI/15;
     #endif
   }
 
@@ -120,7 +120,7 @@ public:
                                       std::placeholders::_1,
                                       std::placeholders::_2) );
       t += dt;
-      if( is_over() ) return 1;
+      // if( is_over() ) return 1; // terminate, not depending on time
     }
     return 0;
   }
@@ -133,6 +133,7 @@ public:
 		state[1] = u.y2;
 		state[2] = u.y4;
 		state[3] = u.y3;
+    // x, vel, angvel, angle
     if(size == 6) {
       state[4] = std::cos(u.y3);
       state[5] = std::sin(u.y3);
@@ -149,6 +150,7 @@ public:
     #else
       //return -1*( fabs(u.y3)>M_PI/15 || fabs(u.y1)>2.4 );
       auto reward =(1 - ( std::fabs(u.y3)>M_PI/15 || std::fabs(u.y1)>2.4 )) ;
+      // auto reward = 9.5-std::fabs(F-9.5);
       // std::cout << "reward is: " << reward << std::endl;
       return reward;
     #endif
