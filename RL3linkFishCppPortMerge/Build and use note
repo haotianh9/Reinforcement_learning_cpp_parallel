@@ -1,18 +1,17 @@
 1. Download dependence:
-libtorch:
+libtorch and add libtorch to your environment path:
 https://pytorch.org/cppdocs/installing.html
 
 wget https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip
 unzip libtorch-shared-with-deps-latest.zip
-
+export Torch_DIR=</absolute/path/to/libtorch>
 
 
 2. build our project:
 go to RL3linkFishCppPortMerge folder
-
 mkdir build
 cd build
-cmake -DCMAKE_PREFIX_PATH="/absolute/path/to/libtorch" ..
+cmake  ..
 cmake --build . --config Release
 or
 cmake --build . --config Debug
@@ -24,7 +23,7 @@ module load cmake
 export LD_PRELOAD=/spack/apps/gcc/8.3.0/lib64/libstdc++.so.6
 
 build:
-cmake -DCMAKE_PREFIX_PATH="/absolute/path/to/libtorch"  -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++   ..
+cmake  -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++   ..
 
 
 3. running:
@@ -32,3 +31,5 @@ mpirun -n 4 ./example-app  > out
 in which 4 is the amount of nodes you want to use 
 (> out) means everything which are supposed to be printed in terminal is instead printed in a file called out
   
+3.1 running on CARC
+use .sl file 
