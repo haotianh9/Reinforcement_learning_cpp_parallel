@@ -27,8 +27,11 @@ cmake  -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++   ..
 
 
 3. running:
+mpirun -n 4 ./example-app <path/to/config/file> > out   
+or
 mpirun -n 4 ./example-app  > out   
 in which 4 is the amount of nodes you want to use 
+if config file is not specified, the default config file will be used (../config)
 (> out) means everything which are supposed to be printed in terminal is instead printed in a file called out
   
 3.1 running on CARC

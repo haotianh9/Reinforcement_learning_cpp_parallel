@@ -1,0 +1,6 @@
+1 = control_vars
+6 = obs_vars
+10000  = Nepisodes 
+100 = Maximum time step in one episode 
+1000000 = Maximum training timestep (either define this or define Nepisodes) 
+2000 = updateTimestep

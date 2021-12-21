@@ -1,22 +1,12 @@
-//
-//  main.cpp
-//  cart-pole
-//
-//  Created by Dmitry Alexeev on 04/06/15.
-//  Copyright (c) 2015 Dmitry Alexeev. All rights reserved.
-//
-
-// compile: mpic++  -o cart cart_pole.cpp -fopenmp
-// running: mpirun -n N ./cart if don't change other parameters, using N=4 is fine now
-
-#include "cart_pole.h"
-#include "cart_MPI.h"
 #include <iostream>
 #include <fstream>
 #include <cstdio>
-#include "mpi.h"
+#include <string>
+#include <mpi.h>
 #include <unistd.h>
 #include "ppo_nn.h"
+#include "cart_pole.h"
+#include "cart_MPI.h"
 inline void env_run(int myid, MPI_Comm& env_comm)
 {
   printf("environment running on process myid: %d \n", myid);
@@ -325,22 +315,78 @@ inline void NN_run(){
   }
 
 }
-int main(int argc, char**argv)
+
+inline void read_parameters(std::string path){
+  std::ifstream config_file;
+  config_file.open(path);
+  if (config_file){
+    std::cout << "reading config file" << std::endl;
+    std::string line;
+    int number;
+    std::string::size_type sz; 
+    std::vector<int> numbers;
+    while(getline(config_file,line)){
+      std::cout << line << std::endl;
+      
+      number = std::stoi(line,&sz);
+      std::cout << number << std::endl;
+      numbers.push_back(number);
+    }
+    control_vars=numbers[0];
+    obs_vars=numbers[1];
+    Nepisodes=numbers[2];
+    N_timestep=numbers[3];
+    Max_timestep=numbers[4];
+    updateTimestep=numbers[5];
+
+  }else{
+    std::cout << "config file not found" << std::endl;
+  }
+}
+
+
+int main(int argc, char* argv[])
 {
   int myid;
   int n;
+  std::string config_file_path;
+  // std::cout << "argc:   " << argc << std::endl;
+  // std::cout << "argv[0]:   " << argv[0] << std::endl;
+  if (argc == 1){
+    config_file_path="../config";
+  }else if (argc == 2){
+    std::cout << "config file directory:   " << argv[1] << std::endl;
+    config_file_path = argv[1];
+  }else{
+    std::cout << "Warning: too many arguments, redundent arguments are not used "  << std::endl;
+  }
   
   MPI_Init(&argc, &argv);
+  
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  update_pre_timestep=(updateTimestep-N_timestep)/(nprocs-1);
+  
   std::cout << "update_pre_timestep: " << update_pre_timestep << std::endl;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+  // if (myid == 0) {
+  read_parameters(config_file_path);
+  update_pre_timestep=(updateTimestep-N_timestep)/(nprocs-1);
+  std::cout << "control_vars: " << control_vars << std::endl;
+  std::cout << "obs_vars: " << obs_vars << std::endl;
+  std::cout << "Nepisodes: " << Nepisodes << std::endl;
+  std::cout << "N_timestep: " << N_timestep << std::endl;
+  std::cout << "Max_timestep: " << Max_timestep << std::endl;
+  std::cout << "updateTimestep: " << updateTimestep << std::endl;
+  std::cout << "update_pre_timestep: " << update_pre_timestep << std::endl;
+  // }
+  // MPI_Barrier(MPI_COMM_WORLD);
+  
   MPI_Comm env_comm;
   // myid == 0 for NN update, otherwise for (myid)th environment
   MPI_Comm_split(MPI_COMM_WORLD, myid==0, myid, &env_comm);
   int sub_procs;
   MPI_Comm_size(env_comm, &sub_procs);
   std::cout << "Sub procs: " << myid << "/" << sub_procs << std::endl;
+  
   if (myid == 0) {
     printf("There are %d processes running in this MPI program\n", nprocs);
     NN_run();
