@@ -25,7 +25,7 @@ inline void env_run(int myid, MPI_Comm& env_comm)
   myfile.open ("./proc" + std::to_string(myid)+"_log.txt");
   bool bounded = true;
   std::vector<double> upper_action_bound{10}, lower_action_bound{-10};
-
+  int timestep=0;
   CartPole env;
 
   // while(true) //train loop
@@ -50,6 +50,7 @@ inline void env_run(int myid, MPI_Comm& env_comm)
     // while (true) //simulation loop
     for (int j=0; j <N_timestep; j++)
     {
+      timestep++;
       std::vector<float> action(control_vars);
       MPI_Recv(action.data(), control_vars, MPI_FLOAT, NNnode, myid+nprocs*2, MPI_COMM_WORLD, &status); // receive action
       printf("Env %d received action = %f  \n", myid, action[0]);
@@ -94,33 +95,41 @@ inline void env_run(int myid, MPI_Comm& env_comm)
         //MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD);  
       }
       printf("Env %d send obs = %f %f %f %f %f %f \n",myid, obs[0] ,obs[1], obs[2] , obs[3] ,obs[4], obs[5]);
-      if(myid!=1){
-        MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
-        if(terminate || (j==(N_timestep-1))) {
-          MPI_Barrier(env_comm);
-          std::cout << "After barrierA1" << std::endl;
+      // std::cout << timestep << std::endl;
+      if (timestep >= update_pre_timestep){
+        
+        std::cout << "begin barrier my process :" << myid << "timestep: " << timestep << std::endl;
+        
+        if(myid!=1){
+          MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
+          if(terminate || (j==(N_timestep-1))) {
+            MPI_Barrier(env_comm);
+            std::cout << "After barrierA1" << std::endl;
+          }
+          
+          if(terminate || (j==(N_timestep-1))){
+            MPI_Barrier(env_comm);
+            std::cout << "After barrierA2" << std::endl;
+            timestep=0;
+          } 
         }
-        
-        if(terminate || (j==(N_timestep-1))){
-          MPI_Barrier(env_comm);
-          std::cout << "After barrierA2" << std::endl;
-        } 
-      }
-      else{
-        if(terminate || (j==(N_timestep-1))){
-          MPI_Barrier(env_comm);
-          std::cout << "After barrierB1" << std::endl;
+        else{
+          if(terminate || (j==(N_timestep-1))){
+            MPI_Barrier(env_comm);
+            std::cout << "After barrierB1" << std::endl;
+          }
+          // MPI_Barrier(env_comm);
+          MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
+          if(terminate || (j==(N_timestep-1))){
+            MPI_Barrier(env_comm);
+            std::cout << "After barrierB2" << std::endl;
+            timestep=0;
+          } 
         }
-        
-        // MPI_Barrier(env_comm);
+      }else{
         MPI_Send(obs.data(), obs_vars+2, MPI_FLOAT, NNnode, myid, MPI_COMM_WORLD); 
-        if(terminate || (j==(N_timestep-1))){
-          MPI_Barrier(env_comm);
-          std::cout << "After barrierB2" << std::endl;
-        } 
-        
-        
       }
+      
       
       if(terminate) break;
     }  //end of simulation loop
@@ -323,8 +332,8 @@ int main(int argc, char**argv)
   
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  
-
+  update_pre_timestep=updateTimestep/(nprocs-1);
+  std::cout << "update_pre_timestep: " << update_pre_timestep << std::endl;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   MPI_Comm env_comm;
   // myid == 0 for NN update, otherwise for (myid)th environment

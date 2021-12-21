@@ -5,7 +5,7 @@ https://pytorch.org/cppdocs/installing.html
 wget https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip
 unzip libtorch-shared-with-deps-latest.zip
 export Torch_DIR=</absolute/path/to/libtorch>
-
+echo "export Torch_DIR=</absolute/path/to/libtorch>" >> ~/.bashrc
 
 2. build our project:
 go to RL3linkFishCppPortMerge folder
