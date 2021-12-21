@@ -332,7 +332,7 @@ int main(int argc, char**argv)
   
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  update_pre_timestep=updateTimestep/(nprocs-1);
+  update_pre_timestep=(updateTimestep-N_timestep)/(nprocs-1);
   std::cout << "update_pre_timestep: " << update_pre_timestep << std::endl;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   MPI_Comm env_comm;
