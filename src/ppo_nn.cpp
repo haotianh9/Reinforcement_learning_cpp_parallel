@@ -193,6 +193,7 @@ auto PPO::select_action(torch::Tensor state, MemoryNN& MemoryNN){
 }
 
 void PPO::update(MemoryNN MemoryNN){
+    // std::cout << "lr: " << this->lr << std::endl;
     auto MemoryNNRewards = MemoryNN.rewards;
     auto MemoryNNIsTerminals = MemoryNN.is_terminals;
     auto MemoryNNIsTimeups = MemoryNN.is_timeups;
@@ -231,7 +232,7 @@ void PPO::update(MemoryNN MemoryNN){
     auto old_states = torch::squeeze(torch::stack(MemoryNN.states)).detach();
     auto old_actions = torch::squeeze(torch::stack(MemoryNN.actions)).detach();
     auto old_logprobs = torch::squeeze(torch::stack(MemoryNN.logprobs)).detach();
-    
+    // std::cout << "K_epochs: " << K_epochs << std::endl;
     for(int index = 0; index < K_epochs; index++){
         
         std::cout << "BEGIN EVALUATION" << std::endl;

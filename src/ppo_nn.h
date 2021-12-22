@@ -115,12 +115,17 @@ class PPO {
     //Dummy constructor for initializing
     
     public:
-    PPO(int64_t state_dim, int64_t action_dim, double action_std, double lr, std::tuple<double, double> betas, double gamma, int64_t K_epochs, double eps_clip){
-        this->lr = lr;
-        this->betas = betas;
-        this->gamma = gamma;
-        this->eps_clip = eps_clip;
-        this->K_epochs = K_epochs;
+    PPO(int64_t state_dim, int64_t action_dim, double action_std, double lr, std::tuple<double, double> betas, double gamma, int64_t K_epochs, double eps_clip): lr(lr), betas(betas), gamma(gamma), eps_clip(eps_clip), K_epochs(K_epochs)  {
+        // this->lr = lr;
+        // this->betas = betas;
+        // this->gamma = gamma;
+        // this->eps_clip = eps_clip;
+        // this->K_epochs = K_epochs;
+        std::cout << "lr: " << this->lr << std::endl;
+        // std::cout << "betas: " << this->betas << std::endl;
+        std::cout << "gamma: " << this->gamma << std::endl;
+        std::cout << "eps_clip: " << this->eps_clip << std::endl;
+        std::cout << "K_epochs: " << this->K_epochs << std::endl;
         
         this->policy = ActorCritic(state_dim, action_dim, action_std);
         auto adamOptions = torch::optim::AdamOptions(this->lr);

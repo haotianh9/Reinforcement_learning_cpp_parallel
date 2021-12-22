@@ -2,7 +2,7 @@ clc;
 clear;
 % clear a ave_reward_2 r ave_reward window_length
 close all;
-fidin=fopen('./build/proc1_log.txt'); % 打开test2.txt文件             
+fidin=fopen('./build/proc2_log.txt'); % 打开test2.txt文件             
 fidout=fopen('./build/mkmatlab.txt','w'); % 创建MKMATLAB.txt文件
 i=0;
 while ~feof(fidin) % 判断是否为文件末尾 
