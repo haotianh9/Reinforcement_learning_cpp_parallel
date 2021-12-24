@@ -7,8 +7,20 @@ unzip libtorch-shared-with-deps-latest.zip
 export Torch_DIR=</absolute/path/to/libtorch>
 echo "export Torch_DIR=</absolute/path/to/libtorch>" >> ~/.bashrc
 
+clang-format is not reqiured, but if you want to use "make format", you need to have it installed
+
+sudo apt install clang-format
+
 2. build our project:
-go to RL3linkFishCppPortMerge folder
+First way(using Makefile):
+make all 
+or 
+make build
+or 
+make debug
+
+
+Second way(by hand):
 mkdir build
 cd build
 cmake  ..
