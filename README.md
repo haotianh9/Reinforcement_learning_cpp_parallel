@@ -15,3 +15,7 @@ Developed by Kishore Ganesh, Qiongao Liu, Yusheng Jiao, Chenchen Huang, Haotian 
 We used our code to trian on a cartpole environment. The learning curve using only one environment node is shown as follows.
 
 ![learning curve](https://github.com/haotianh9/Reinforcement_learning_cpp_parallel/blob/main/results/carpole1node/learning%20curve.jpg)
+
+The learning curve using  three environments running simutaneously is showns as follows.
+
+![learning curve](https://github.com/haotianh9/Reinforcement_learning_cpp_parallel/blob/main/results/carpole3node/learning%20curve.jpg)
