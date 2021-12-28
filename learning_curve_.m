@@ -1,8 +1,8 @@
-clc;
-clear;
-% clear a ave_reward_2 r ave_reward window_length
-close all;
-fidin=fopen('./build/proc2_log.txt'); % 打开test2.txt文件             
+% clc;
+% clear;
+clear a ave_reward_2 r ave_reward window_length
+% close all;
+fidin=fopen(['./build/proc' int2str(id) '_log.txt']); % 打开test2.txt文件             
 fidout=fopen('./build/mkmatlab.txt','w'); % 创建MKMATLAB.txt文件
 i=0;
 while ~feof(fidin) % 判断是否为文件末尾 
@@ -26,7 +26,7 @@ r=A(:,3);
 
 t=length(r);
 a=linspace(1,t,t);
-scatter(a,r,2.09,'filled','b');
+scatter(a,r,2.09,'filled',color);
 
 window_length=100;
 
@@ -52,11 +52,12 @@ end
 hold on
 
 % plot(a,ave_reward')
-plot(a(1:length(a)-window_length),ave_reward_2','b')
+eval(['label' int2str(id) '=[ ''reward for process '' int2str(id) ];']);
+plot(a(1:length(a)-window_length),ave_reward_2',color)
 % ylim([-10 50])
 ax = gca;
 ax.FontSize = 19;
 xlabel('episodes')
 ylabel('reward')
 % xlim([0 50000])
-mean(r(length(r)-2000:length(r)))
+% mean(r(length(r)-2000:length(r)))

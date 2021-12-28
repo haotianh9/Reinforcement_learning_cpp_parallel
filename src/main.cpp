@@ -401,7 +401,9 @@ int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-
+  if (nprocs < 2){
+    std::cout << "You need to assign this program at least two processes" << std::endl;
+  }
   std::cout << "update_pre_timestep: " << update_pre_timestep << std::endl;
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
   // if (myid == 0) {
