@@ -13,4 +13,4 @@ learning_curve_;
 id=3;color="k";
 learning_curve_;
 legend('',label1,'',label2,'',label3)
-xlim([0,1000])
+xlim([0,1500])
