@@ -19,3 +19,5 @@ We used our code to trian on a cartpole environment. The learning curve using on
 The learning curve using  three environments running simutaneously is showns as follows.
 
 ![learning curve](https://github.com/haotianh9/Reinforcement_learning_cpp_parallel/blob/main/results/carpole3node/learning_curve.jpg)
+
+In the learning curves above, the dots shows the reward of each episode, and the line shows the average reward over 100 episodes.
