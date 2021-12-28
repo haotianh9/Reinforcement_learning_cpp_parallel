@@ -14,5 +14,5 @@ Developed by Kishore Ganesh, Qiongao Liu, Yusheng Jiao, Chenchen Huang, Haotian 
 
 We used our code to trian on a cartpole environment. The learning curve using only one environment node is shown as follows.
 
-<!-- ![Learning curve using one environment node](results/carpole1node/learning curve.jpg?raw=true "Title") -->
-![Alt text](results/carpole1node/learning curve.jpg?raw=true "Title")
+
+![plot](./results/carpole1node/learning curve.jpg)
