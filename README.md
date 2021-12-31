@@ -7,7 +7,7 @@ Goal: build a scalable, reliable and well-maintained RL framework in C++ that ca
 
 see documentation [here](https://github.com/haotianh9/Reinforcement_learning_cpp_parallel/tree/main/doc/main.pdf)
 
-For reqiuremnts, building and running step, see [here](https://github.com/haotianh9/Reinforcement_learning_cpp_parallel/blob/main/Build%20and%20use%20note)
+For dependence, building and running, see [here](https://github.com/haotianh9/Reinforcement_learning_cpp_parallel/blob/main/Build%20and%20use%20note)
 
 # alpha 0.1
 Version alpha 0.1 implements Policy Proximal Optimization ([PPO](https://arxiv.org/pdf/1707.06347.pdf)) learning algorithm only. Basic MPI functions are used for communications between simulation nodes and the learning node. [Libtorch](https://pytorch.org/cppdocs/) is used for neural network training and inference. Our code can be compiled and run on USC CARC. 
