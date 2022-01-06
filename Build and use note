@@ -1,0 +1,50 @@
+1. Download dependence:
+libtorch and add libtorch to your environment path:
+https://pytorch.org/cppdocs/installing.html
+
+wget https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip
+unzip libtorch-shared-with-deps-latest.zip
+export Torch_DIR=</absolute/path/to/libtorch>
+echo "export Torch_DIR=</absolute/path/to/libtorch>" >> ~/.bashrc
+
+clang-format is not reqiured, but if you want to use "make format", you need to have it installed
+
+sudo apt install clang-format
+
+2. build our project:
+First way(using Makefile):
+make all 
+or 
+make build
+or 
+make debug
+
+
+Second way(by hand):
+mkdir build
+cd build
+cmake  ..
+cmake --build . --config Release
+or
+cmake --build . --config Debug
+
+2.1 build on USC CARC 
+module load gcc/8.3.0 
+module load openmpi/4.0.2
+module load cmake
+export LD_PRELOAD=/spack/apps/gcc/8.3.0/lib64/libstdc++.so.6
+
+build:
+cmake  -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++   ..
+
+
+3. running:
+mpirun -n 4 ./cpp-rl-training <path/to/config/file> > out   
+or
+mpirun -n 4 ./cpp-rl-training  > out   
+in which 4 is the amount of nodes you want to use 
+if config file is not specified, the default config file will be used (../config)
+(> out) means everything which are supposed to be printed in terminal is instead printed in a file called out
+  
+3.1 running on CARC
+use .sl file 
