@@ -30,7 +30,7 @@ In the learning curves above, the dots shows the reward of each episode, and the
 # Build
 
 1. Download dependence:
-![libtorch](https://pytorch.org/cppdocs/installing.html) and add libtorch to your environment path:
+[libtorch](https://pytorch.org/cppdocs/installing.html) and add libtorch to your environment path:
 
 wget https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip
 unzip libtorch-shared-with-deps-latest.zip
