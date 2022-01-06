@@ -31,19 +31,22 @@ In the learning curves above, the dots shows the reward of each episode, and the
 
 1. Download dependence:
 [libtorch](https://pytorch.org/cppdocs/installing.html) and add libtorch to your environment path:
-
+"
 wget https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip
 unzip libtorch-shared-with-deps-latest.zip
 export Torch_DIR=</absolute/path/to/libtorch>
 echo "export Torch_DIR=</absolute/path/to/libtorch>" >> ~/.bashrc
-
+"
 clang-format is not reqiured, but if you want to use "make format", you need to have it installed
 on debian system:
+"
 sudo apt install clang-format
-
+"
 2. build our project:
 First way(using Makefile):
+"
 make all 
+"
 or 
 make build
 or 
